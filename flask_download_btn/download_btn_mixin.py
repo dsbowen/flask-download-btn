@@ -1,4 +1,4 @@
-from flask import Markup, current_app, render_template
+from flask import Markup, current_app, render_template, send_file
 from sqlalchemy import Column, Text, Float, PickleType, inspect
 from sqlalchemy_mutable import MutableListType, MutableDictType
 
@@ -85,10 +85,12 @@ class DownloadBtnMixin():
     def script(self):
         return Markup(render_template('download_btn/script.html', btn=self))
     
-    def _download(self):
+    def _make_files(self):
         import time
-        i = 0
-        while True:
-            yield 'data: {}\n\n'.format(i)
+        for i in range(5):
+            yield 'event: progress_report\ndata: {}\n\n'.format(i)
             time.sleep(1)
-            i += 1
+        yield 'event: download_ready\ndata: \n\n'
+
+    def _download(self):
+        return send_file('text.txt', as_attachment=True)

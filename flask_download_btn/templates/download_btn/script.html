@@ -4,16 +4,23 @@
             console.log('Download started');
             $(this).prop('disabled', true);
             $("#{{ btn.progress_model_id }}").show();
-            const evtURL = "{{ url_for('download_btn._download', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+            const evtURL = "{{ url_for('download_btn._make_files', id=btn._id, btn_cls=btn.__class__.__name__) }}";
             const evtSource = new EventSource(evtURL);
-            evtSource.onmessage = function(e){
+            evtSource.addEventListener('progress_report', function(e){
                 console.log(e.data);
-            }
-            reset_download_btn();
+            });
+            evtSource.addEventListener('download_ready', function(){
+                const url = "{{ url_for('download_btn._download', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'text.txt';
+                document.body.appendChild(a);
+                a.click();
+                evtSource.close();
+                $("#{{ btn.progress_model_id }}").hide();
+                $("#{{ btn.model_id }}").prop('disabled', false);  
+            });
         });
     });
-    function reset_download_btn(){
-        $("#{{ btn.progress_model_id }}").hide();
-        $("#{{ btn.model_id }}").prop('disabled', false);
-    }
 </script>
