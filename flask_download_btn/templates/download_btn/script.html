@@ -1,0 +1,19 @@
+<script>
+    $(document).ready(function(){
+        $("#{{ btn.model_id }}").click(function(){
+            console.log('Download started');
+            $(this).prop('disabled', true);
+            $("#{{ btn.progress_model_id }}").show();
+            const evtURL = "{{ url_for('download_btn._download', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+            const evtSource = new EventSource(evtURL);
+            evtSource.onmessage = function(e){
+                console.log(e.data);
+            }
+            reset_download_btn();
+        });
+    });
+    function reset_download_btn(){
+        $("#{{ btn.progress_model_id }}").hide();
+        $("#{{ btn.model_id }}").prop('disabled', false);
+    }
+</script>
