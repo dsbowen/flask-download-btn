@@ -1,26 +1,47 @@
+<!-- Download button script
+
+When the download button is clicked, disable the button and begin the event stream from the button's make_files function. The make_files function sends progress reports, which update the progress bar. When the event listener received a download_ready message, download the file.
+-->
+
 <script>
     $(document).ready(function(){
-        $("#{{ btn.model_id }}").click(function(){
+        $("#{{ btn.btn_id }}").click(function(){
             console.log('Download started');
             $(this).prop('disabled', true);
-            $("#{{ btn.progress_model_id }}").show();
-            const evtURL = "{{ url_for('download_btn._make_files', id=btn._id, btn_cls=btn.__class__.__name__) }}";
-            const evtSource = new EventSource(evtURL);
-            evtSource.addEventListener('progress_report', function(e){
-                console.log(e.data);
-            });
-            evtSource.addEventListener('download_ready', function(){
-                const url = "{{ url_for('download_btn._download', id=btn._id, btn_cls=btn.__class__.__name__) }}";
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'text.txt';
-                document.body.appendChild(a);
-                a.click();
-                evtSource.close();
-                $("#{{ btn.progress_model_id }}").hide();
-                $("#{{ btn.model_id }}").prop('disabled', false);  
-            });
+            handle_form();
         });
     });
+
+    function handle_form(){
+        const form_url = "{{ url_for('download_btn.handle_form', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+        $.post(form_url, $("#{{ btn.form_id }}").serialize(), function(){
+            make_files();
+        });
+    }
+
+    function make_files(){
+        const evtURL = "{{ url_for('download_btn.make_files', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+        const evtSource = new EventSource(evtURL);
+        evtSource.addEventListener('progress_report', function(e){
+            var progress = $.parseJSON(e.data).html;
+            $("#{{ btn.progress_id }}").html(progress);
+        });
+        evtSource.addEventListener('download_ready', function(e){
+            evtSource.close();
+            download(e);
+        });
+    }
+
+    function download(e){
+        const url = "{{ url_for('download_btn.download', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        var download_msg = $.parseJSON(e.data).html;
+        $("#{{ btn.progress_id }}").html(download_msg);
+        $("#{{ btn.btn_id }}").prop('disabled', false);
+        console.log('Download complete'); 
+    }
 </script>
