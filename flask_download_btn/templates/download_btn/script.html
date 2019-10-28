@@ -14,13 +14,13 @@ When the download button is clicked, disable the button and begin the event stre
 
     function handle_form(){
         const form_url = "{{ url_for('download_btn.handle_form', id=btn._id, btn_cls=btn.__class__.__name__) }}";
-        $.post(form_url, $("#{{ btn.form_id }}").serialize(), function(){
-            make_files();
+        $.post(form_url, $("{{ btn._form }}").serialize(), function(){
+            create_files();
         });
     }
 
-    function make_files(){
-        const evtURL = "{{ url_for('download_btn.make_files', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+    function create_files(){
+        const evtURL = "{{ url_for('download_btn.create_files', id=btn._id, btn_cls=btn.__class__.__name__) }}";
         const evtSource = new EventSource(evtURL);
         evtSource.addEventListener('progress_report', function(e){
             var progress = $.parseJSON(e.data).html;

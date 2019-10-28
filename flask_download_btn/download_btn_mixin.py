@@ -1,26 +1,47 @@
 """Download button mixin"""
 
 from flask import Markup, current_app, render_template, send_file
-from sqlalchemy import Column, String, Text, PickleType, inspect
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, PickleType, inspect
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy.orm import relationship
+from sqlalchemy_function import FunctionBase
+from sqlalchemy_function import FunctionMixin as FunctionMixinBase
 from sqlalchemy_mutable import MutableListType, MutableDictType
+import itertools
 import json
 import os
 import zipfile
 
-class DownloadBtnMixin():
+class DownloadBtnMixin(FunctionBase):
+    id = Column(Integer, primary_key=True)
     btn_classes = Column(MutableListType)
     btn_template = Column(String)
     text = Column(Text)
     progress_classes = Column(MutableListType)
     progress_template = Column(String)
     form_id = Column(String)
-    form_handler = Column(PickleType)
-    _make_files = Column(PickleType)
-    args = Column(MutableListType)
-    kwargs = Column(MutableDictType)
     attachment_filename = Column(String)
     filenames = Column(MutableListType)
     download_msg = Column(Text)
+
+    @declared_attr
+    def handle_form_functions(self):
+        return relationship(
+            'HandleForm',
+            backref='btn',
+            order_by='HandleForm.index',
+            collection_class=ordering_list('index')
+        )
+    
+    @declared_attr
+    def create_file_functions(self):
+        return relationship(
+            'CreateFile',
+            backref='btn',
+            order_by='CreateFile.index',
+            collection_class=ordering_list('index')
+        )
 
     @property
     def _id(self):
@@ -47,15 +68,6 @@ class DownloadBtnMixin():
         return self.model_id+'.zip'
 
     @property
-    def make_files(self):
-        return self._make_files
-
-    @make_files.setter
-    def make_files(self, value):
-        assert callable(value) or value is None
-        self._make_files = value
-
-    @property
     def _btn_classes(self):
         """Button <div> classes in html format"""
         return ' '.join(self.btn_classes)
@@ -69,23 +81,25 @@ class DownloadBtnMixin():
         """Progress bar <div> classes in html format"""
         return ' '.join(self.progress_classes)
 
+    @property
+    def _form(self):
+        return 'form' if self.form_id is None else '#'+self.form_id
+
     def __init__(
             self, btn_classes=None, btn_template=None, text=None, 
-            progress_classes=None, progress_template=None,
-            form_id=None, form_handler=None,
-            make_files=None, args=[], kwargs={},
+            progress_classes=None, progress_template=None, form_id=None, 
+            handle_form_functions=[], create_file_functions=[],
             attachment_filename=None, filenames=[], download_msg=None
         ):
+        self._set_function_relationships()
         self.btn_classes = btn_classes
         self.btn_template = btn_template
         self.text = text
         self.progress_classes = progress_classes
         self.progress_template = progress_template
         self.form_id = form_id
-        self.form_handler = form_handler
-        self.make_files = make_files
-        self.args = args
-        self.kwargs = kwargs
+        self.handle_form_functions = handle_form_functions
+        self.create_file_functions = create_file_functions
         self.attachment_filename = attachment_filename
         self.filenames = filenames
         self.download_msg = download_msg
@@ -140,19 +154,22 @@ class DownloadBtnMixin():
         return 'event: progress_report\ndata: {}\n\n'.format(json_data)
 
     def _handle_form(self, response):
-        if self.form_handler is None:
-            return
-        self.form_handler(self, response)
+        [
+            f.func(f.parent, response, *f.args, **f.kwargs) 
+            for f in self.handle_form_functions
+        ]
 
-    def _make_files_wrapper(self, app):
-        """Wrap the make_files function
+    def _create_files(self, app):
+        """Create files for download
 
-        Call the make_files function and return progress reports as server sent events. When the make_files generator terminates, send a 'download_ready' message.
+        Call the create_files functions and return progress reports as server sent events. When the generator terminates, send a 'download_ready' message.
         """
         app.app_context().push()
-        if self.make_files is not None:
-            for exp in self.make_files(self, *self.args, **self.kwargs):
-                yield exp
+        db = app.extensions['download_btn_manager'].db
+        db.session.add(self)
+        gen = itertools.chain(*[f() for f in self.create_file_functions])
+        for exp in gen:
+            yield exp
         for exp in self._zip_files():
             yield exp
         data = self.download_msg or ''
@@ -179,7 +196,7 @@ class DownloadBtnMixin():
         """Download file"""
         num_files = len(self.filenames)
         if num_files == 0:
-            return
+            return ('', 204)
         filename = self.filenames[0] if num_files == 1 else self.zipf_name
         response = send_file(
             filename, as_attachment=True,
@@ -193,3 +210,25 @@ class DownloadBtnMixin():
         if filename == self.zipf_name:
             os.remove(self.zipf_name)
         return response
+
+
+class FunctionMixin(FunctionMixinBase):
+    id = Column(Integer, primary_key=True)
+
+    @declared_attr
+    def btn_id(self):
+        return Column(Integer, ForeignKey('download_btn.id'))
+
+    @property
+    def parent(self):
+        return self.btn
+
+    @parent.setter
+    def parent(self, value):
+        self.btn = value
+
+class HandleFormMixin(FunctionMixin):
+    pass
+
+class CreateFileMixin(FunctionMixin):
+    pass
