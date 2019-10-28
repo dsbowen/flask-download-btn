@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 import time
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -53,7 +54,6 @@ def example2():
     btn = get_btn('example2')
     btn.text = 'Download Example 2'
     btn.filenames = ['hello_world.txt', 'hello_moon.txt']
-    btn.attachment_filename = 'download.zip'
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 
@@ -89,7 +89,6 @@ def example4():
     return render_template('example4.html', download_btn=btn)
 
 def select_files(btn, response):
-    print(response)
     btn.filenames = response.getlist('selectFiles')
     db.session.commit()
 

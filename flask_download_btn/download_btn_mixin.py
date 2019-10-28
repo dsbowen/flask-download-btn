@@ -1,6 +1,6 @@
 """Download button mixin"""
 
-from flask import Markup, current_app, render_template, send_file
+from flask import Markup, current_app, render_template, send_file, session
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, PickleType, inspect
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -13,8 +13,10 @@ import json
 import os
 import zipfile
 
+
 class DownloadBtnMixin(FunctionBase):
     id = Column(Integer, primary_key=True)
+    _zipf_sfxs = Column(MutableListType)
     btn_classes = Column(MutableListType)
     btn_template = Column(String)
     text = Column(Text)
@@ -63,9 +65,12 @@ class DownloadBtnMixin(FunctionBase):
         return self.model_id+'-progress'
 
     @property
-    def zipf_name(self):
-        """Identity of the zip file"""
-        return self.model_id+'.zip'
+    def _zipf_name_key(self):
+        return self.model_id+'zipf-name'
+
+    @property
+    def _zipf_sfx_key(self):
+        return self.model_id+'zipf-sfx'
 
     @property
     def _btn_classes(self):
@@ -92,6 +97,7 @@ class DownloadBtnMixin(FunctionBase):
             attachment_filename=None, filenames=[], download_msg=None
         ):
         self._set_function_relationships()
+        self._zipf_sfxs = []
         self.btn_classes = btn_classes
         self.btn_template = btn_template
         self.text = text
@@ -158,8 +164,30 @@ class DownloadBtnMixin(FunctionBase):
             f.func(f.parent, response, *f.args, **f.kwargs) 
             for f in self.handle_form_functions
         ]
+    
+    def _gen_zipf_name(self):
+        """Generate a unique zipfile name for the session"""
+        sfx = self._gen_zipf_sfx()
+        name = '{0}-{1}.zip'.format(self.model_id, sfx)
+        session[self._zipf_name_key] = name
+        session[self._zipf_sfx_key] = sfx
+        return name
 
-    def _create_files(self, app):
+    def _gen_zipf_sfx(self):
+        """Generate a unique zipfile suffix for the session
+        
+        Iterate through the zipfile suffixes until an inactive suffix is found. Use this suffix for the zipfile name and mark it as active.
+
+        If all suffixes in the zipfile suffix list are active, extend the list.
+        """
+        for i, active in enumerate(self._zipf_sfxs):
+            if not active:
+                self._zipf_sfxs[i] = True
+                return i
+        self._zipf_sfxs.append(True)
+        return len(self._zipf_sfxs) - 1
+
+    def _create_files(self, app, zipf_name):
         """Create files for download
 
         Call the create_files functions and return progress reports as server sent events. When the generator terminates, send a 'download_ready' message.
@@ -170,22 +198,18 @@ class DownloadBtnMixin(FunctionBase):
         gen = itertools.chain(*[f() for f in self.create_file_functions])
         for exp in gen:
             yield exp
-        for exp in self._zip_files():
+        for exp in self._zip_files(zipf_name):
             yield exp
         data = self.download_msg or ''
         json_data = json.dumps({'html': data})
         yield 'event: download_ready\ndata: {}\n\n'.format(json_data)
 
-    def _zip_files(self):
+    def _zip_files(self, zipf_name):
         """Zip files"""
         num_files = len(self.filenames)
         if num_files <= 1:
             return
-        try:
-            os.remove(self.zipf_name)
-        except:
-            pass
-        zipf = zipfile.ZipFile(self.zipf_name, 'w', zipfile.ZIP_DEFLATED)
+        zipf = zipfile.ZipFile('tmp/'+zipf_name, 'w', zipfile.ZIP_DEFLATED)
         for i, filename in enumerate(self.filenames):
             yield self.report('Zipping Files', 100.0*i/num_files)
             zipf.write(filename)
@@ -197,19 +221,34 @@ class DownloadBtnMixin(FunctionBase):
         num_files = len(self.filenames)
         if num_files == 0:
             return ('', 204)
-        filename = self.filenames[0] if num_files == 1 else self.zipf_name
+        zipf_path = 'tmp/'+session[self._zipf_name_key]
+        filename = self.filenames[0] if num_files == 1 else zipf_path
+        if num_files == 1:
+            attachment_filename = self.attachment_filename or filename
+        else:
+            attachment_filename = self.attachment_filename or 'download.zip'
         response = send_file(
-            filename, as_attachment=True,
-            attachment_filename=self.attachment_filename
+            filename, as_attachment=True, 
+            attachment_filename=attachment_filename
         )
         response.headers['Cache-Control'] = (
             'no-cache, no-store, must-revalidate'
         )
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
-        if filename == self.zipf_name:
-            os.remove(self.zipf_name)
+        self._deprecate_zipf()
         return response
+
+    def _deprecate_zipf(self):
+        name = session[self._zipf_name_key]
+        sfx = session[self._zipf_sfx_key]
+        try:
+            os.remove('tmp/'+name)
+        except:
+            pass
+        self._zipf_sfxs[sfx] = False
+        session.pop(self._zipf_name_key)
+        session.pop(self._zipf_sfx_key)
 
 
 class FunctionMixin(FunctionMixinBase):
@@ -227,8 +266,10 @@ class FunctionMixin(FunctionMixinBase):
     def parent(self, value):
         self.btn = value
 
+
 class HandleFormMixin(FunctionMixin):
     pass
+
 
 class CreateFileMixin(FunctionMixin):
     pass

@@ -5,7 +5,8 @@ Flask-Download-Btn provides a mixin for creating bootstrap download buttons in F
 
 from flask_download_btn.download_btn_mixin import CreateFileMixin, DownloadBtnMixin, HandleFormMixin
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, request, session
+import os
 
 
 class DownloadBtnManager():
@@ -25,6 +26,8 @@ class DownloadBtnManager():
         self.progress_classes = ['progress-bar']
         self.progress_template = 'download_btn/progress.html'
         self.setattrs(**kwargs)
+        if not os.path.exists('tmp'):
+            os.mkdir('tmp')
         if app is not None:
             self._init_app(app)
     
@@ -62,19 +65,23 @@ class DownloadBtnManager():
             The make_files function must return a stream of server sent events. The SSE's report download progress to the client.
             """
             btn = self.get_btn(id, btn_cls)
+            zipf_name = btn._gen_zipf_name()
+            self.db.session.commit()
             return Response(
-                btn._create_files(app), mimetype='text/event-stream'
+                btn._create_files(app, zipf_name),
+                mimetype='text/event-stream'
             )
 
         @bp.route('/download-btn/download/<id>/<btn_cls>')
         def download(id, btn_cls):
             """Download files"""
             btn = self.get_btn(id, btn_cls)
-            return btn._download()
+            response = btn._download()
+            self.db.session.commit()
+            return response
 
         app.register_blueprint(bp)
 
     def get_btn(self, id, btn_cls):
         """Return a download button given its id and class name"""
         return self.registered_classes[btn_cls].query.get(id)
-    
