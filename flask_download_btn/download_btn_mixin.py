@@ -7,6 +7,7 @@ On click, a download button performs three functions:
 """
 
 from flask import Markup, current_app, render_template, send_file, session
+from random import choice
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, PickleType, inspect
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -17,6 +18,7 @@ from sqlalchemy_mutable import MutableListType, MutableDictType
 import itertools
 import json
 import os
+import string
 import zipfile
 
 
@@ -75,6 +77,10 @@ class DownloadBtnMixin(FunctionBase):
         return self.model_id+'-progress'
     
     """Session keys"""
+    @property
+    def _csrf_key(self):
+        return self.model_id+'csrf'
+
     @property
     def _response_cached_key(self):
         """Key for response caching"""
@@ -182,7 +188,17 @@ class DownloadBtnMixin(FunctionBase):
 
     def script(self):
         """Render the download button script"""
-        return Markup(render_template('download_btn/script.html', btn=self))
+        chars = string.ascii_letters + string.digits
+        csrf_token = ''.join([choice(chars) for i in range(90)])
+        session[self._csrf_key] = csrf_token
+        btn_kwargs = {
+            'id': self._id,
+            'btn_cls': type(self).__name__,
+            'csrf_token': csrf_token
+        }
+        return Markup(render_template(
+            'download_btn/script.html', btn=self, btn_kwargs=btn_kwargs
+        ))
 
     def report(self, stage=None, pct_complete=None):
         """Send a progress report
@@ -288,17 +304,18 @@ class DownloadBtnMixin(FunctionBase):
             attachment_filename = self.attachment_filename or 'download.zip'
         session[self._filename_key] = filename
         session[self._attachment_filename_key] = attachment_filename
-        response = self._get_response()
-        return self._handle_cache(response)
+        return self._get_response()
 
     def _get_response(self):
         """Get server response (i.e. attachment)"""
         filename = session[self._filename_key]
         attachment_filename = session[self._attachment_filename_key]
-        return send_file(
+        response = send_file(
             filename, as_attachment=True, 
             attachment_filename=attachment_filename
         )
+        self._handle_cache(response)
+        return response
     
     def _handle_cache(self, response):
         """Handle caching"""
@@ -308,12 +325,12 @@ class DownloadBtnMixin(FunctionBase):
             )
             response.headers['Pragma'] = 'no-use_cache'
             response.headers['Expires'] = '0'
-            self._deprecate_zipf()
+            self.clear_session()
         else:
             session[self._response_cached_key] = True
-        return response
 
-    def _deprecate_zipf(self):
+    """Clear session and CSRF authentication"""
+    def clear_session(self):
         """Deprecate the current zip file"""
         name = session[self._zipf_name_key]
         sfx = session[self._zipf_sfx_key]
@@ -322,8 +339,11 @@ class DownloadBtnMixin(FunctionBase):
         except:
             pass
         self._zipf_sfxs[sfx] = False
-        session.pop(self._zipf_name_key)
-        session.pop(self._zipf_sfx_key)
+        session.pop(self._zipf_name_key, None)
+        session.pop(self._zipf_sfx_key, None)
+
+    def clear_csrf(self):
+        session.pop(self._csrf_key, None)
 
 
 class FunctionMixin(FunctionMixinBase):

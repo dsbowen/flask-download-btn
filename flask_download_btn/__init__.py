@@ -84,7 +84,6 @@ class DownloadBtnManager():
         @bp.route('/download-btn/download/<id>/<btn_cls>')
         def download(id, btn_cls):
             """Download files"""
-            print(request.args.get('csrf_token'))
             btn = self.get_btn(id, btn_cls)
             if btn.cached():
                 return btn._get_response()
@@ -96,4 +95,7 @@ class DownloadBtnManager():
 
     def get_btn(self, id, btn_cls):
         """Return a download button given its id and class name"""
-        return self.registered_classes[btn_cls].query.get(id)
+        btn = self.registered_classes[btn_cls].query.get(id)
+        if session[btn._csrf_key] == request.args.get('csrf_token'):
+            return btn
+        raise ValueError('CSRF attempt detected and blocked')

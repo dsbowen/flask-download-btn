@@ -63,10 +63,13 @@ def example2():
 @app.route('/example3')
 def example3():
     """Example 3: make_file function"""
+    from flask import session
+    session.clear()
     btn = get_btn('example3')
     btn.text = 'Download Example 3'
     btn.filenames = ['hello_world.txt']
     btn.use_cache = True
+    btn.create_file_functions.clear()
     CreateFile(btn, func=create_file1, kwargs={'centiseconds':500})
     CreateFile(btn, func=create_file2, kwargs={'centiseconds':300})
     db.session.commit()
