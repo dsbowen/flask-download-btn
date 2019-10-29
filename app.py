@@ -18,14 +18,17 @@ download_btn_manager = DownloadBtnManager(app, db=db)
 # 3. Create download button model and register it with the manager
 @DownloadBtnManager.register
 class DownloadBtn(DownloadBtnMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
 # 4. Create CreateFile and HandleForm models
 class CreateFile(CreateFileMixin, db.Model):
-    pass
+    id = db.Column(db.Integer, primary_key=True)
+    bnt_id = db.Column(db.Integer, db.ForeignKey('download_btn.id'))
 
 class HandleForm(HandleFormMixin, db.Model):
-    pass
+    id = db.Column(db.Integer, primary_key=True)
+    bnt_id = db.Column(db.Integer, db.ForeignKey('download_btn.id'))
 
 def get_btn(name):
     btn = DownloadBtn.query.filter_by(name=name).first()
@@ -63,6 +66,7 @@ def example3():
     btn = get_btn('example3')
     btn.text = 'Download Example 3'
     btn.filenames = ['hello_world.txt']
+    btn.use_cache = True
     CreateFile(btn, func=create_file1, kwargs={'centiseconds':500})
     CreateFile(btn, func=create_file2, kwargs={'centiseconds':300})
     db.session.commit()

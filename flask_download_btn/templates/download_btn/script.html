@@ -33,7 +33,7 @@ When the download button is clicked, disable the button and begin the event stre
     }
 
     function download(e){
-        const url = "{{ url_for('download_btn.download', id=btn._id, btn_cls=btn.__class__.__name__) }}";
+        const url = "{{ url_for('download_btn.download', id=btn._id, btn_cls=btn.__class__.__name__, csrf_token='hello_world') }}";
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;

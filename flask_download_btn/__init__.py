@@ -25,6 +25,7 @@ class DownloadBtnManager():
         self.btn_template = 'download_btn/button.html'
         self.progress_classes = ['progress-bar']
         self.progress_template = 'download_btn/progress.html'
+        self.use_cache = False
         self.setattrs(**kwargs)
         if not os.path.exists('tmp'):
             os.mkdir('tmp')
@@ -37,13 +38,14 @@ class DownloadBtnManager():
 
     def setattrs(
             self, db=None, btn_classes=None, btn_template=None, 
-            progress_classes=None, progress_template=None,
+            progress_classes=None, progress_template=None, use_cache=None
         ):
         self.db = db or self.db
         self.btn_classes = btn_classes or self.btn_classes
         self.btn_template = btn_template or self.btn_template
         self.progress_classes = progress_classes or self.progress_classes
         self.progress_template = progress_template or self.progress_template
+        self.use_cache = self.use_cache if use_cache is None else use_cache
 
     def _init_app(self, app):
         self.app = app
@@ -55,7 +57,10 @@ class DownloadBtnManager():
         @bp.route('/download-btn/form/<id>/<btn_cls>', methods=['POST'])
         def handle_form(id, btn_cls):
             btn = self.get_btn(id, btn_cls)
+            if btn.cached():
+                return ''
             btn._handle_form(request.form)
+            self.db.session.commit()
             return ''
 
         @bp.route('/download-btn/create_files/<id>/<btn_cls>')
@@ -65,6 +70,10 @@ class DownloadBtnManager():
             The make_files function must return a stream of server sent events. The SSE's report download progress to the client.
             """
             btn = self.get_btn(id, btn_cls)
+            if btn.cached():
+                return Response(
+                    btn._download_ready(), mimetype='text/event-stream'
+                )
             zipf_name = btn._gen_zipf_name()
             self.db.session.commit()
             return Response(
@@ -75,7 +84,10 @@ class DownloadBtnManager():
         @bp.route('/download-btn/download/<id>/<btn_cls>')
         def download(id, btn_cls):
             """Download files"""
+            print(request.args.get('csrf_token'))
             btn = self.get_btn(id, btn_cls)
+            if btn.cached():
+                return btn._get_response()
             response = btn._download()
             self.db.session.commit()
             return response
