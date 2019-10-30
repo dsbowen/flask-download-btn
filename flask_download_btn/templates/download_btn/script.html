@@ -1,9 +1,11 @@
-<!-- Download button script
-
-When the download button is clicked, disable the button and begin the event stream from the button's make_files function. The make_files function sends progress reports, which update the progress bar. When the event listener received a download_ready message, download the file.
--->
-
 <script>
+    /* Download button script
+
+    The download process has three stages:
+    1. Web form handling
+    2. File creation
+    3. Download
+    */
     $(document).ready(function(){
         $("#{{ btn.btn_id }}").click(function(){
             console.log('Download started');
@@ -20,27 +22,63 @@ When the download button is clicked, disable the button and begin the event stre
     }
 
     function create_files(){
+        /* Listen for server sent progress updates
+        
+        Updates may reset the progress bar, report progress, or indicate 
+        that files are ready to download.
+        */
         const evtURL = "{{ url_for('download_btn.create_files', **btn_kwargs) }}";
         const evtSource = new EventSource(evtURL);
+        evtSource.addEventListener('reset', function(e){
+            reset(event_args(e));
+        })
         evtSource.addEventListener('progress_report', function(e){
-            var progress = $.parseJSON(e.data).html;
-            $("#{{ btn.progress_id }}").html(progress);
+            report_progress(event_args(e));
         });
         evtSource.addEventListener('download_ready', function(e){
             evtSource.close();
-            download(e);
+            download(event_args(e));
         });
     }
 
+    function event_args(e){
+        // Get event arguments
+        var progress = $("#{{ btn.progress_id }}");
+        var data = $.parseJSON(e.data);
+        return {'progress': progress, 'data': data};
+    }
+
+    function reset(e){
+        // Reset the progress bar
+        e.progress.html(e.data.html);
+        show_bar(e.progress);
+    }
+
+    function report_progress(e){
+        // Update the progress bar with a progress report
+        $("#{{ btn.progress_text_id }}").text(e.data.text);
+        show_bar(e.progress);
+        $("#{{ btn.progress_bar_id }}").width(e.data.pct_complete+"%");
+    }
+
+    function show_bar(progress){
+        if (progress.is(":hidden")){
+            progress.show();
+        }
+    }
+
     function download(e){
+        // Download
         const url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
         document.body.appendChild(a);
         a.click();
-        var download_msg = $.parseJSON(e.data).html;
-        $("#{{ btn.progress_id }}").html(download_msg);
+        if (e.data.text != ''){
+            report_progress(e);
+        }
+        e.progress.hide();
         $("#{{ btn.btn_id }}").prop('disabled', false);
         console.log('Download complete'); 
     }

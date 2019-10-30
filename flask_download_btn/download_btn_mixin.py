@@ -1,9 +1,14 @@
 """Download button mixin
 
-On click, a download button performs three functions:
-1. Web form handling
-2. File creation
-3. Download
+This file defines a download button mixin, as well as mixins for form handling functions and file creation functions.
+
+The download button is responsible for:
+1. Rendering a download button, progress bar, and script
+2. Cache and session management
+3. Handling the download process on click:
+    3.1 Web form handling
+    3.2 File creation
+    3.3 Download
 """
 
 from flask import Markup, current_app, render_template, send_file, session
@@ -28,14 +33,17 @@ class DownloadBtnMixin(FunctionBase):
     """Columns and relationships"""
     _zipf_sfxs = Column(MutableListType)
     btn_classes = Column(MutableListType)
+    btn_style = Column(MutableDictType)
     btn_template = Column(String)
     text = Column(Text)
     progress_classes = Column(MutableListType)
+    progress_style = Column(MutableDictType)
     progress_template = Column(String)
     use_cache = Column(Boolean)
     form_id = Column(String)
-    attachment_filename = Column(String)
+    transition_speed = Column(String)
     filenames = Column(MutableListType)
+    attachment_filename = Column(String)
     download_msg = Column(Text)
 
     @declared_attr
@@ -73,12 +81,23 @@ class DownloadBtnMixin(FunctionBase):
 
     @property
     def progress_id(self):
-        """Html id for the progress bar <div> tag""" 
+        """Html id for the progress bar container""" 
         return self.model_id+'-progress'
+
+    @property
+    def progress_bar_id(self):
+        """Html id for the progress bar"""
+        return self.model_id+'-progress-bar'
+    
+    @property
+    def progress_text_id(self):
+        """Html id for the progress bar text"""
+        return self.model_id+'-progress-text'
     
     """Session keys"""
     @property
     def _csrf_key(self):
+        """Key for the CSRF token"""
         return self.model_id+'csrf'
 
     @property
@@ -111,6 +130,10 @@ class DownloadBtnMixin(FunctionBase):
     def _btn_classes(self):
         """Button <div> classes in html format"""
         return ' '.join(self.btn_classes)
+
+    @property
+    def _btn_style(self):
+        return self._style(self.btn_style)
     
     @property
     def _text(self):
@@ -123,71 +146,57 @@ class DownloadBtnMixin(FunctionBase):
         return ' '.join(self.progress_classes)
 
     @property
+    def _progress_style(self):
+        return self._style(self.progress_style)
+
+    def _style(self, style):
+        return ' '.join([key+': '+val+';' for key, val in style.items()])
+
+    @property
     def _form(self):
         """Web form selector"""
         return 'form' if self.form_id is None else '#'+self.form_id
 
-    def __init__(
-            self, btn_classes=None, btn_template=None, text=None, 
-            progress_classes=None, progress_template=None, use_cache=None, 
-            form_id=None, handle_form_functions=[], create_file_functions=[],
-            attachment_filename=None, filenames=[], download_msg=None
-        ):
+    def __init__(self, **kwargs):
+        """Constructor
+
+        1. Set function relationships for form handling and file creation 
+        function models.
+        2. Set a blank zip file suffix dictionary
+        3. Set attributes
+
+        Manager defaults are overridden by keyword arguments.
+        """
         self._set_function_relationships()
         self._zipf_sfxs = []
-        self.btn_classes = btn_classes
-        self.btn_template = btn_template
-        self.text = text
-        self.progress_classes = progress_classes
-        self.progress_template = progress_template
-        self.use_cache = use_cache
-        self.form_id = form_id
-        self.handle_form_functions = handle_form_functions
-        self.create_file_functions = create_file_functions
-        self.attachment_filename = attachment_filename
-        self.filenames = filenames
-        self.download_msg = download_msg
-        self._default_settings()
-
-    def _default_settings(self):
-        """Default settings
-        
-        Use download button manager default settings unless otherwise specified.
-        """
         manager = current_app.extensions['download_btn_manager']
-        self.btn_classes = self.btn_classes or manager.btn_classes
-        self.btn_template = self.btn_template or manager.btn_template
-        self.progress_classes = (
-            self.progress_classes or manager.progress_classes
-        )
-        self.progress_template = (
-            self.progress_template or manager.progress_template
-        )
-        self.use_cache = (
-            self.use_cache if self.use_cache is not None else manager.use_cache
-        )
+        self.__dict__.update(manager.default_settings)
+        self.__dict__.update(kwargs)
 
-    """Methods for response caching and html rendering"""
-    def cached(self):
-        """Indicate the response is cached"""
-        return (
-            self.use_cache and self._response_cached_key in session
-            and session[self._response_cached_key]
-        )
-
+    """Render download button, progress bar, and script"""
     def render_btn(self):
-        """Render the button <div> tag"""
+        """Render the download button"""
         return Markup(render_template(self.btn_template, btn=self))
 
     def render_progress(self):
-        """Render the progress bar container
+        """Render the progress bar
         
-        This will be updated with server sent progress reports from make_files.
+        The progress bar is rendered inside a container. The contents of the 
+        container may be updated with progress reports during file creation.
         """
-        return Markup('<div id="{}"></div>'.format(self.progress_id))
+        container = '<div id="{0}" style="display: none;">{1}</div>'
+        content = render_template(
+            self.progress_template, btn=self, pct_complete=0, text=''
+        )
+        return Markup(container.format(self.progress_id, content))
 
     def script(self):
-        """Render the download button script"""
+        """Render the download button script
+        
+        The script will call routes for form handling, file creation, and 
+        download. Authentication for these routes requires a CSRF token. 
+        This method creates a unique token and stores it in the session.
+        """
         chars = string.ascii_letters + string.digits
         csrf_token = ''.join([choice(chars) for i in range(90)])
         session[self._csrf_key] = csrf_token
@@ -199,38 +208,86 @@ class DownloadBtnMixin(FunctionBase):
         return Markup(render_template(
             'download_btn/script.html', btn=self, btn_kwargs=btn_kwargs
         ))
+    
+    def reset(self, stage=None, pct_complete=None):
+        """Reset the progress bar
+
+        This method resets the progress bar by replacing its html. You will 
+        typically want to reset the progress bar at the start of a new stage.
+
+        `reset` executes faster than `report`. Therefore, you may also want 
+        to use `reset` instead of `report` when sending rapid progress 
+        updates (~10ms or faster).
+        """
+        text = self._get_progress_text(stage, pct_complete)
+        html = render_template(
+            self.progress_template, 
+            btn=self, pct_complete=pct_complete, text=text
+        )
+        data = json.dumps({'html': html})
+        return 'event: reset\ndata: {}\n\n'.format(data)
 
     def report(self, stage=None, pct_complete=None):
         """Send a progress report
         
-        This method returns a server sent event. The data are an updated progress bar. The download button script updates the progress bar when it receives this message.
+        This method reports file creation progress with a server sent event. 
+        The download button script will update the progress bar accordingly.
         """
-        stage = '' if stage is None else stage+': '
+        text = self._get_progress_text(stage, pct_complete)
+        data = json.dumps({'text': text, 'pct_complete': pct_complete})
+        return 'event: progress_report\ndata: {}\n\n'.format(data)
+
+    def _get_progress_text(self, stage=None, pct_complete=None):
+        """Get progress bar text"""
         if pct_complete is None:
             pct_complete, pct_complete_txt = 0, ''
+            stage = stage or ''
         else:
             pct_complete_txt = '{:.0f}%'.format(pct_complete)
-        text = stage + pct_complete_txt
-        data = render_template(
-            self.progress_template, 
-            btn=self, pct_complete=pct_complete, text=text
-        )
-        json_data = json.dumps({'html': data})
-        return 'event: progress_report\ndata: {}\n\n'.format(json_data)
+            stage = stage+': ' if stage is not None else ''
+        return stage + pct_complete_txt
 
-    """Web form handling"""
+    """2. Cache and session management"""
+    def cached(self):
+        """Indicate the response is cached"""
+        return (
+            self.use_cache and self._response_cached_key in session
+            and session[self._response_cached_key]
+        )
+    
+    def clear_session(self):
+        """Clear session and delete associated zip file"""
+        name = session[self._zipf_name_key]
+        sfx = session[self._zipf_sfx_key]
+        try:
+            os.remove('tmp/'+name)
+        except:
+            pass
+        self._zipf_sfxs[sfx] = False
+        session.pop(self._zipf_name_key, None)
+        session.pop(self._zipf_sfx_key, None)
+
+    def clear_csrf(self):
+        """Clear CSRF token from session"""
+        session.pop(self._csrf_key, None)
+
+    """3. Web form handling"""
+    """3.1 Web form handling"""
     def _handle_form(self, response):
-        """Execute handle form functions with form response"""
+        """Execute handle form functions with form response."""
         [
             f.func(f.parent, response, *f.args, **f.kwargs) 
             for f in self.handle_form_functions
         ]
     
-    """File creation"""
+    """3.2 File creation"""
     def _gen_zipf_name(self):
         """Generate a unique zip file name for the session
         
-        This method generates a unique zip file name for the session. The zip file name will be used to store zipped files. It will not be necessary to zip files if the download button specifies only one downloaded file.
+        This method generates a unique zip file name for the session. The 
+        zip file name will be used to store zipped files. It will not be 
+        necessary to zip files if the download button specifies only one 
+        downloaded file.
         """
         sfx = self._gen_zipf_sfx()
         name = '{0}-{1}.zip'.format(self.model_id, sfx)
@@ -241,9 +298,11 @@ class DownloadBtnMixin(FunctionBase):
     def _gen_zipf_sfx(self):
         """Generate a unique zipfile suffix for the session
         
-        Iterate through the zipfile suffixes until an inactive suffix is found. Use this suffix for the zipfile name and mark it as active.
+        Iterate through the zipfile suffixes until an inactive suffix is 
+        found. Use this suffix for the zipfile name and mark it as active.
 
-        If all suffixes in the zipfile suffix list are active, extend the list.
+        If all suffixes in the zipfile suffix list are active, extend the 
+        list.
         """
         for i, active in enumerate(self._zipf_sfxs):
             if not active:
@@ -267,32 +326,45 @@ class DownloadBtnMixin(FunctionBase):
         db.session.add(self)
         gen = itertools.chain(
             *[f() for f in self.create_file_functions],
-            self._zip_files(zipf_name), self._download_ready()
+            self._zip_files(zipf_name), 
+            self._download_ready()
         )
         for exp in gen:
             yield exp
 
     def _zip_files(self, zipf_name):
-        """Zip files"""
+        """Zip files
+        
+        Yield a progress report every 10 files.
+        """
         num_files = len(self.filenames)
         if num_files <= 1:
             return
+        stage = 'Zipping Files'
+        yield self.reset(stage, 0)
         zipf = zipfile.ZipFile('tmp/'+zipf_name, 'w', zipfile.ZIP_DEFLATED)
         for i, filename in enumerate(self.filenames):
-            yield self.report('Zipping Files', 100.0*i/num_files)
+            if i % 10 == 0:
+                yield self.report(stage, 100.0*i/num_files)
             zipf.write(filename)
-        yield self.report('Zipping Files', 100.0)
+        yield self.report(stage, 100)
         zipf.close()
 
     def _download_ready(self):
         """Send a download ready message"""
-        data = self.download_msg or ''
-        json_data = json.dumps({'html': data})
-        yield 'event: download_ready\ndata: {}\n\n'.format(json_data)
+        text = self._get_progress_text(self.download_msg)
+        data = json.dumps({'text': text, 'pct_complete': 100})
+        yield 'event: download_ready\ndata: {}\n\n'.format(data)
 
-    """Download"""
+    """3.3 Download"""
     def _download(self):
-        """Download file"""
+        """Download file
+        
+        Download depends on the number of files to be downloaded:
+        0: Return empty response
+        1: Return the file as an attachment
+        2+: Return the zip archive
+        """
         num_files = len(self.filenames)
         if num_files == 0:
             return ('', 204)
@@ -329,23 +401,8 @@ class DownloadBtnMixin(FunctionBase):
         else:
             session[self._response_cached_key] = True
 
-    """Clear session and CSRF authentication"""
-    def clear_session(self):
-        """Deprecate the current zip file"""
-        name = session[self._zipf_name_key]
-        sfx = session[self._zipf_sfx_key]
-        try:
-            os.remove('tmp/'+name)
-        except:
-            pass
-        self._zipf_sfxs[sfx] = False
-        session.pop(self._zipf_name_key, None)
-        session.pop(self._zipf_sfx_key, None)
 
-    def clear_csrf(self):
-        session.pop(self._csrf_key, None)
-
-
+"""HandleForm and CreateFile Mixins"""
 class FunctionMixin(FunctionMixinBase):
     @property
     def parent(self):

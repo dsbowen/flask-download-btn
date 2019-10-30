@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        {{ download_btn.script() }}
+    </head>
+    <body>
+    <div class="container h-100">
+    <div class="row h-100 justify-content-center align-items-center">
+        <form>
+            {{ download_btn.render_progress() }}
+            <div id="selectFiles" name="selectFiles">
+                <p>Select files to download.</p>
+                <div class="custom-control custom-checkbox">
+                    <input id="helloWorld" name="selectFiles" type="checkbox" class="custom-control-input" value="hello_world.txt">
+                    <label class="custom-control-label" for="helloWorld">Hello World</label>
+                </div>
+                <div class="custom-control custom-checkbox">
+                    <input id="helloMoon" name="selectFiles" type="checkbox" class="custom-control-input" value="hello_moon.txt">
+                    <label class="custom-control-label" for="helloMoon">Hello Moon</label>
+                </div>
+            </div>
+            <br>
+            {{ download_btn.render_btn() }}
+        </form>
+    </div>
+    </div>
+    </body>
+</html>

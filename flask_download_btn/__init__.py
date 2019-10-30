@@ -1,12 +1,44 @@
 """Flask-Download-Btn
 
-Flask-Download-Btn provides a mixin for creating bootstrap download buttons in Flask.
+Flask-Download-Btn provides a mixin for creating bootstrap download buttons 
+in Flask.
+
+This file defines the download button manager. The manager's functions are:
+1. Register download button classes
+2. Hold default settings for download button models
+3. Register routes used by the download button
+
+The download process has three stages:
+1. Web form handling
+2. File creation
+3. Download
+
+The manager's routes reflect the stages of the download process.
 """
 
 from flask_download_btn.download_btn_mixin import CreateFileMixin, DownloadBtnMixin, HandleFormMixin
 
 from flask import Blueprint, Response, request, session
 import os
+
+"""Default settings for download button models"""
+DEFAULT_SETTINGS = {
+    'btn_classes': ['btn', 'btn-primary', 'w-100'],
+    'btn_style': {},
+    'btn_template': 'download_btn/button.html',
+    'progress_classes': ['progress-bar'],
+    'progress_style': {
+        'height': '25px',
+        'background-color': '#C8C8C8',
+        'margin-top': '10px',
+        'margin-bottom': '10px',
+        'box-shadow': '0 1px 2px rgba(0, 0, 0, 0.25) inset'
+    },
+    'progress_template': 'download_btn/progress.html',
+    'filenames': [],
+    'use_cache': False,
+    'transition_speed': '.5s'
+}
 
 
 class DownloadBtnManager():
@@ -15,37 +47,29 @@ class DownloadBtnManager():
 
     @classmethod
     def register(cls, btn_cls):
-        """Download button class registry"""
+        """Update download button class registry"""
         cls.registered_classes[btn_cls.__name__] = btn_cls
         return btn_cls
 
-    def __init__(self, app=None, **kwargs):
-        self.db = None
-        self.btn_classes = ['btn', 'btn-primary']
-        self.btn_template = 'download_btn/button.html'
-        self.progress_classes = ['progress-bar']
-        self.progress_template = 'download_btn/progress.html'
-        self.use_cache = False
-        self.setattrs(**kwargs)
+    def __init__(self, app=None, db=None, **kwargs):
+        """Constructor
+
+        The constructor updates default settings for buttons. It also 
+        creates a tmp folder for storing zip files which download buttons 
+        will send to the client.
+        """
+        self.db = db
+        self.default_settings = DEFAULT_SETTINGS
+        self.default_settings.update(kwargs)
         if not os.path.exists('tmp'):
             os.mkdir('tmp')
         if app is not None:
             self._init_app(app)
     
-    def init_app(self, app, **kwargs):
-        self.setattrs(**kwargs)
-        self._init_app(app)
-
-    def setattrs(
-            self, db=None, btn_classes=None, btn_template=None, 
-            progress_classes=None, progress_template=None, use_cache=None
-        ):
+    def init_app(self, app, db=None, **kwargs):
         self.db = db or self.db
-        self.btn_classes = btn_classes or self.btn_classes
-        self.btn_template = btn_template or self.btn_template
-        self.progress_classes = progress_classes or self.progress_classes
-        self.progress_template = progress_template or self.progress_template
-        self.use_cache = self.use_cache if use_cache is None else use_cache
+        self.default_settings.update(kwargs)
+        self._init_app(app)
 
     def _init_app(self, app):
         self.app = app
@@ -56,6 +80,7 @@ class DownloadBtnManager():
 
         @bp.route('/download-btn/form/<id>/<btn_cls>', methods=['POST'])
         def handle_form(id, btn_cls):
+            """Web form handling"""
             btn = self.get_btn(id, btn_cls)
             if btn.cached():
                 return ''
@@ -65,10 +90,7 @@ class DownloadBtnManager():
 
         @bp.route('/download-btn/create_files/<id>/<btn_cls>')
         def create_files(id, btn_cls):
-            """Runs the download button's make_files function
-
-            The make_files function must return a stream of server sent events. The SSE's report download progress to the client.
-            """
+            """File creation"""
             btn = self.get_btn(id, btn_cls)
             if btn.cached():
                 return Response(
@@ -94,7 +116,10 @@ class DownloadBtnManager():
         app.register_blueprint(bp)
 
     def get_btn(self, id, btn_cls):
-        """Return a download button given its id and class name"""
+        """Return a download button given its id and class name
+        
+        Authentication is required to access a button for CSRF prevention.
+        """
         btn = self.registered_classes[btn_cls].query.get(id)
         if session[btn._csrf_key] == request.args.get('csrf_token'):
             return btn
