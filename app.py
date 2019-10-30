@@ -3,9 +3,9 @@
 """Setup"""
 # 1. Import download button manager and mixins
 from flask_download_btn import CreateFileMixin, DownloadBtnManager, DownloadBtnMixin, HandleFormMixin
+
 from flask import Flask, render_template, session
 from flask_sqlalchemy import SQLAlchemy
-import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -77,6 +77,8 @@ def example3():
 
 def select_files(btn, response):
     btn.filenames = response.getlist('selectFiles')
+
+import time
 
 @app.route('/example4')
 def example4():

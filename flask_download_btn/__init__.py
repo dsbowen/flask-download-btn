@@ -1,6 +1,6 @@
 """Flask-Download-Btn
 
-Flask-Download-Btn provides a mixin for creating bootstrap download buttons 
+Flask-Download-Btn defines a SQLAlchemy Mixin for creating bootstrap download buttons 
 in Flask.
 
 This file defines the download button manager. The manager's functions are:
