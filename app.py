@@ -89,7 +89,7 @@ def example4():
         btn.text = 'Download Example 4'
         btn.use_cache = True
         CreateFile(btn, func=create_file1, kwargs={'seconds': 5})
-        CreateFile(btn, func=create_file2, args=[4])
+        CreateFile(btn, func=create_file2, kwargs={'centiseconds': 400})
         btn.filenames = ['hello_world.txt', 'hello_moon.txt']
         db.session.add(btn)
         db.session.commit()
@@ -103,13 +103,13 @@ def create_file1(btn, seconds):
     yield btn.report('Creating file 1', 100.0)
     time.sleep(1)
 
-def create_file2(btn, seconds):
+def create_file2(btn, centiseconds):
     yield btn.reset('Creating File 2', 0)
-    for i in range(seconds):
-        yield btn.report('Creating File 2', 100.0*i/seconds)
-        time.sleep(1)
+    for i in range(centiseconds):
+        yield btn.report('Creating File 2', 100.0*i/centiseconds)
+        time.sleep(.01)
     yield btn.report('Download Complete', 100)
-    time.sleep(1)
+    time.sleep(.01)
 
 @app.route('/example5')
 def example5():
@@ -118,15 +118,16 @@ def example5():
     btn = DownloadBtn.query.filter_by(name='example5').first()
     if not btn:
         btn = DownloadBtn()
+        btn.name = 'example5'
         btn.btn_classes.remove('btn-primary')
         btn.btn_classes.append('btn-outline-primary')
         btn.progress_classes.append('progress-bar-striped')
         btn.progress_classes.append('progress-bar-animated')
-        btn.name = 'example5'
         btn.text = 'Download Example 5'
         HandleForm(btn, func=select_files)
-        CreateFile(btn, func=create_file1, args=[5])
-        CreateFile(btn, func=create_file2, args=[3])
+        CreateFile(btn, func=create_file1, kwargs={'seconds': 4})
+        CreateFile(btn, func=create_file2, kwargs={'centiseconds': 300})
+        btn.transition_speed = '.7s'
         btn.download_msg = 'Download Complete'
         db.session.add(btn)
         db.session.commit()

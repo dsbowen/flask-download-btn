@@ -11,6 +11,7 @@ The download button is responsible for:
     3.3 Download
 """
 
+from datetime import datetime
 from flask import Markup, current_app, render_template, send_file, session
 from random import choice
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, PickleType, inspect
@@ -41,7 +42,7 @@ class DownloadBtnMixin(FunctionBase):
     progress_template = Column(String)
     use_cache = Column(Boolean)
     form_id = Column(String)
-    transition_speed = Column(String)
+    init_transition_speed = Column(String)
     filenames = Column(MutableListType)
     attachment_filename = Column(String)
     download_msg = Column(Text)
@@ -246,6 +247,10 @@ class DownloadBtnMixin(FunctionBase):
             pct_complete_txt = '{:.0f}%'.format(pct_complete)
             stage = stage+': ' if stage is not None else ''
         return stage + pct_complete_txt
+    
+    def transition_speed(self, speed):
+        data = json.dumps({'speed': speed})
+        return 'event: transition_speed\ndata: {}\n\n'.format(data)
 
     """2. Cache and session management"""
     def cached(self):
@@ -329,7 +334,12 @@ class DownloadBtnMixin(FunctionBase):
             self._zip_files(zipf_name), 
             self._download_ready()
         )
+        sse_prev = sse_curr = datetime.now()
         for exp in gen:
+            sse_prev, sse_curr = sse_curr, datetime.now()
+            delta = (sse_curr - sse_prev).total_seconds()
+            delta = 0 if delta < .02 else delta
+            yield self.transition_speed(str(delta)+'s')
             yield exp
 
     def _zip_files(self, zipf_name):

@@ -35,6 +35,9 @@
         evtSource.addEventListener('progress_report', function(e){
             report_progress(event_args(e));
         });
+        evtSource.addEventListener('transition_speed', function(e){
+            transition_speed(event_args(e));
+        })
         evtSource.addEventListener('download_ready', function(e){
             evtSource.close();
             download(event_args(e));
@@ -44,8 +47,16 @@
     function event_args(e){
         // Get event arguments
         var progress = $("#{{ btn.progress_id }}");
+        var progress_bar = $("#{{ btn.progress_bar_id }}");
         var data = $.parseJSON(e.data);
-        return {'progress': progress, 'data': data};
+        return {
+            'progress': progress, 'progress_bar': progress_bar, 'data': data
+        };
+    }
+
+    function transition_speed(e){
+        // Update the progress bar transition speed
+        e.progress_bar.css('transition', 'width '+e.data.speed);
     }
 
     function reset(e){
@@ -58,7 +69,7 @@
         // Update the progress bar with a progress report
         $("#{{ btn.progress_text_id }}").text(e.data.text);
         show_bar(e.progress);
-        $("#{{ btn.progress_bar_id }}").width(e.data.pct_complete+"%");
+        e.progress_bar.width(e.data.pct_complete+"%");
     }
 
     function show_bar(progress){
