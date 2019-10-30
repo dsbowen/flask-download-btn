@@ -1,0 +1,1 @@
+recursive-include flask_download_btn/templates/download_btn/ *.html

@@ -1,0 +1,11 @@
+<div class="progress position-relative" style="{{ btn._progress_style }}">
+    {% block progress_bar %}
+    <div id="{{ btn.progress_bar_id }}" class="{{ btn._progress_classes }}" role="progressbar" width="{{ pct_complete }}%" style="transition: width {{ btn.init_transition_speed }};">
+        {% block text %}
+        <div id="{{ btn.progress_text_id }}" class="justify-content-center d-flex position-absolute w-100 align-items-center">
+            {{ text }}
+        </div>
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>

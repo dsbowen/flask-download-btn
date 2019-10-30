@@ -1,0 +1,12 @@
+MANIFEST.in
+README.md
+setup.py
+flask_download_btn/__init__.py
+flask_download_btn/download_btn_mixin.py
+flask_download_btn.egg-info/PKG-INFO
+flask_download_btn.egg-info/SOURCES.txt
+flask_download_btn.egg-info/dependency_links.txt
+flask_download_btn.egg-info/top_level.txt
+flask_download_btn/templates/download_btn/button.html
+flask_download_btn/templates/download_btn/progress.html
+flask_download_btn/templates/download_btn/script.html
