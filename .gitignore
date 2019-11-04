@@ -1,2 +1,6 @@
 __pycache__
 tmp
+build
+dist
+flask_download_btn.egg-info
+flask_download_btn_dsbowen.egg-info

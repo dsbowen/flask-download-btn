@@ -338,15 +338,13 @@ class DownloadBtnMixin(FunctionBase):
         for exp in gen:
             sse_prev, sse_curr = sse_curr, datetime.now()
             delta = (sse_curr - sse_prev).total_seconds()
+            delta = min(delta, .5)
             delta = 0 if delta < .02 else delta
             yield self.transition_speed(str(delta)+'s')
             yield exp
 
     def _zip_files(self, zipf_name):
-        """Zip files
-        
-        Yield a progress report every 10 files.
-        """
+        """Zip files"""
         num_files = len(self.filenames)
         if num_files <= 1:
             return
@@ -354,8 +352,7 @@ class DownloadBtnMixin(FunctionBase):
         yield self.reset(stage, 0)
         zipf = zipfile.ZipFile('tmp/'+zipf_name, 'w', zipfile.ZIP_DEFLATED)
         for i, filename in enumerate(self.filenames):
-            if i % 10 == 0:
-                yield self.report(stage, 100.0*i/num_files)
+            yield self.report(stage, 100.0*i/num_files)
             zipf.write(filename)
         yield self.report(stage, 100)
         zipf.close()
@@ -391,6 +388,8 @@ class DownloadBtnMixin(FunctionBase):
     def _get_response(self):
         """Get server response (i.e. attachment)"""
         filename = session[self._filename_key]
+        if not filename.startswith('/'):
+            filename = os.path.join(os.getcwd(), filename)
         attachment_filename = session[self._attachment_filename_key]
         response = send_file(
             filename, as_attachment=True, 
