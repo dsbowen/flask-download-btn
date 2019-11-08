@@ -45,6 +45,7 @@ class DownloadBtnMixin(FunctionBase):
     init_transition_speed = Column(String)
     filenames = Column(MutableListType)
     attachment_filename = Column(String)
+    target = Column(String)
     download_msg = Column(Text)
     callback = Column(Text)
 
@@ -360,9 +361,11 @@ class DownloadBtnMixin(FunctionBase):
 
     def _download_ready(self):
         """Send a download ready message"""
+        download_empty = len(self.filenames) == 0
         text = self._get_progress_text(self.download_msg)
         data = json.dumps({
-            'text': text, 'pct_complete': 100, 'callback': self.callback
+            'text': text, 'pct_complete': 100, 'callback': self.callback,
+            'download_empty': download_empty
         })
         yield 'event: download_ready\ndata: {}\n\n'.format(data)
 

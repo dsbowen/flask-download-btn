@@ -29,16 +29,16 @@
         */
         const evtURL = "{{ url_for('download_btn.create_files', **btn_kwargs) }}";
         const evtSource = new EventSource(evtURL);
-        evtSource.addEventListener('reset', function(e){
+        evtSource.addEventListener("reset", function(e){
             reset(event_args(e));
         })
-        evtSource.addEventListener('progress_report', function(e){
+        evtSource.addEventListener("progress_report", function(e){
             report_progress(event_args(e));
         });
-        evtSource.addEventListener('transition_speed', function(e){
+        evtSource.addEventListener("transition_speed", function(e){
             transition_speed(event_args(e));
         })
-        evtSource.addEventListener('download_ready', function(e){
+        evtSource.addEventListener("download_ready", function(e){
             evtSource.close();
             download(event_args(e));
         });
@@ -80,29 +80,27 @@
 
     function download(e){
         // Download
-        fetch("{{ url_for('download_btn.download', **btn_kwargs) }}")
-            .then(resp => resp.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'download.zip';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                reset(e);
-            })
-            .catch(reset(e));
+        if (!e.data.download_empty) {
+            const url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
+            const a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            if (e.data.target !== null){
+                a.target = e.data.target;
+            }
+            document.body.appendChild(a);
+            a.click();
+        }
+        reset_btn(e);
     }
 
-    function reset(e){
+    function reset_btn(e){
         if (e.data.text != ''){
             report_progress(e);
         }
         e.progress.hide();
         if (e.data.callback !== null){
-            window.location.replace(e.data.callback)
+            window.location.replace(e.data.callback);
         }
         $("#{{ btn.btn_id }}").prop('disabled', false);
         console.log('Download complete'); 

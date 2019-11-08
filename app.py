@@ -72,6 +72,7 @@ def example3():
         btn = DownloadBtn()
         btn.name = 'example3'
         btn.text = 'Download Example 3'
+        btn.filenames = ['hello_world.txt']
         btn.callback = url_for('download_success')
         db.session.add(btn)
         db.session.commit()
