@@ -80,12 +80,23 @@
 
     function download(e){
         // Download
-        const url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        document.body.appendChild(a);
-        a.click();
+        fetch("{{ url_for('download_btn.download', **btn_kwargs) }}")
+            .then(resp => resp.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'download.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                reset(e);
+            })
+            .catch(reset(e));
+    }
+
+    function reset(e){
         if (e.data.text != ''){
             report_progress(e);
         }
