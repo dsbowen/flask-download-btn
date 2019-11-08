@@ -90,6 +90,9 @@
             report_progress(e);
         }
         e.progress.hide();
+        if (e.data.callback !== null){
+            window.location.replace(e.data.callback)
+        }
         $("#{{ btn.btn_id }}").prop('disabled', false);
         console.log('Download complete'); 
     }

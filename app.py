@@ -62,33 +62,52 @@ def example2():
         db.session.commit()
     return render_template('index.html', download_btn=btn)
 
+from flask import url_for
+
 @app.route('/example3')
 def example3():
-    """Example 3: Form handling"""
+    """Example 3: Callback routes"""
     btn = DownloadBtn.query.filter_by(name='example3').first()
     if not btn:
         btn = DownloadBtn()
         btn.name = 'example3'
         btn.text = 'Download Example 3'
+        btn.callback = url_for('download_success')
+        db.session.add(btn)
+        db.session.commit()
+    return render_template('index.html', download_btn=btn)
+
+@app.route('/download-success')
+def download_success():
+    return 'Download Successful'
+
+@app.route('/example4')
+def example4():
+    """Example 4: Form handling"""
+    btn = DownloadBtn.query.filter_by(name='example4').first()
+    if not btn:
+        btn = DownloadBtn()
+        btn.name = 'example4'
+        btn.text = 'Download Example 4'
         HandleForm(btn, func=select_files)
         db.session.add(btn)
         db.session.commit()
-    return render_template('example3.html', download_btn=btn)
+    return render_template('example4.html', download_btn=btn)
 
 def select_files(btn, response):
     btn.filenames = response.getlist('selectFiles')
 
 import time
 
-@app.route('/example4')
-def example4():
-    """Example 4: File creation"""
+@app.route('/example5')
+def example5():
+    """Example 5: File creation"""
     session.clear()
-    btn = DownloadBtn.query.filter_by(name='example4').first()
+    btn = DownloadBtn.query.filter_by(name='example5').first()
     if not btn:
         btn = DownloadBtn()
-        btn.name = 'example4'
-        btn.text = 'Download Example 4'
+        btn.name = 'example5'
+        btn.text = 'Download Example 5'
         btn.use_cache = True
         CreateFile(btn, func=create_file1, kwargs={'seconds': 5})
         CreateFile(btn, func=create_file2, kwargs={'centiseconds': 400})
@@ -113,19 +132,19 @@ def create_file2(btn, centiseconds):
     yield btn.report('Download Complete', 100)
     time.sleep(.01)
 
-@app.route('/example5')
-def example5():
-    """Example 5: With style"""
+@app.route('/example6')
+def example6():
+    """Example 6: With style"""
     session.clear()
-    btn = DownloadBtn.query.filter_by(name='example5').first()
+    btn = DownloadBtn.query.filter_by(name='example6').first()
     if not btn:
         btn = DownloadBtn()
-        btn.name = 'example5'
+        btn.name = 'example6'
         btn.btn_classes.remove('btn-primary')
         btn.btn_classes.append('btn-outline-primary')
         btn.progress_classes.append('progress-bar-striped')
         btn.progress_classes.append('progress-bar-animated')
-        btn.text = 'Download Example 5'
+        btn.text = 'Download Example 6'
         HandleForm(btn, func=select_files)
         CreateFile(btn, func=create_file1, kwargs={'seconds': 4})
         CreateFile(btn, func=create_file2, kwargs={'centiseconds': 300})
@@ -133,7 +152,7 @@ def example5():
         btn.download_msg = 'Download Complete'
         db.session.add(btn)
         db.session.commit()
-    return render_template('example5.html', download_btn=btn)
+    return render_template('example6.html', download_btn=btn)
 
 if __name__ == '__main__':
     app.run(debug=True)

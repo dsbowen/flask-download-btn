@@ -46,6 +46,7 @@ class DownloadBtnMixin(FunctionBase):
     filenames = Column(MutableListType)
     attachment_filename = Column(String)
     download_msg = Column(Text)
+    callback = Column(Text)
 
     @declared_attr
     def handle_form_functions(self):
@@ -360,7 +361,9 @@ class DownloadBtnMixin(FunctionBase):
     def _download_ready(self):
         """Send a download ready message"""
         text = self._get_progress_text(self.download_msg)
-        data = json.dumps({'text': text, 'pct_complete': 100})
+        data = json.dumps({
+            'text': text, 'pct_complete': 100, 'callback': self.callback
+        })
         yield 'event: download_ready\ndata: {}\n\n'.format(data)
 
     """3.3 Download"""
