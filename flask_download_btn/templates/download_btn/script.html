@@ -30,7 +30,7 @@
         const evtURL = "{{ url_for('download_btn.create_files', **btn_kwargs) }}";
         const evtSource = new EventSource(evtURL);
         evtSource.addEventListener("reset", function(e){
-            reset(event_args(e));
+            reset_progress(event_args(e));
         })
         evtSource.addEventListener("progress_report", function(e){
             report_progress(event_args(e));
@@ -59,7 +59,7 @@
         e.progress_bar.css('transition', 'width '+e.data.speed);
     }
 
-    function reset(e){
+    function reset_progress(e){
         // Reset the progress bar
         e.progress.html(e.data.html);
         show_bar(e.progress);
@@ -79,30 +79,50 @@
     }
 
     function download(e){
-        // Download
+        // Prepare download file
         if (!e.data.download_empty) {
-            const url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            if (e.data.target !== null){
-                a.target = e.data.target;
-            }
-            document.body.appendChild(a);
-            a.click();
+            var header;
+            var filename;
+            var url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
+            fetch(url, {cache: "no-store"})
+                .then(function(resp){
+                    header = resp.headers.get("Content-Disposition");
+                    filename = header.split("filename=")[1];
+                    return resp.blob();
+                })
+                .then(blob => {
+                    _download({blob: blob, filename: filename});
+                    reset_btn(e);
+                })
         }
-        reset_btn(e);
+        else { reset_btn(e); }
+    }
+
+    function _download(e){
+        // Download
+        const url = window.URL.createObjectURL(e.blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = e.filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
     }
 
     function reset_btn(e){
+        // Reset download button
         if (e.data.text != ''){
             report_progress(e);
         }
-        e.progress.hide();
-        if (e.data.callback !== null){
-            window.location.replace(e.data.callback);
-        }
-        $("#{{ btn.btn_id }}").prop('disabled', false);
-        console.log('Download complete'); 
+        setTimeout(function(){ e.progress.hide(); }, 1000);
+        const reset_url = "{{ url_for('download_btn.reset', **btn_kwargs) }}";
+        $.post(reset_url, function(){
+            if (e.data.callback !== null){
+                window.location.replace(e.data.callback);
+            }
+            $("#{{ btn.btn_id }}").prop('disabled', false);
+            console.log('Download complete'); 
+        });
     }
 </script>

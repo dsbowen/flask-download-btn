@@ -4,11 +4,11 @@ This file defines a download button mixin, as well as mixins for form handling f
 
 The download button is responsible for:
 1. Rendering a download button, progress bar, and script
-2. Cache and session management
-3. Handling the download process on click:
-    3.1 Web form handling
-    3.2 File creation
-    3.3 Download
+2. Download process:
+    2.1 Web form handling
+    2.2 File creation
+    2.3 Download
+    2.4 Reset download button (cache handling)
 """
 
 from datetime import datetime
@@ -21,18 +21,18 @@ from sqlalchemy.orm import relationship
 from sqlalchemy_function import FunctionBase
 from sqlalchemy_function import FunctionMixin as FunctionMixinBase
 from sqlalchemy_mutable import MutableListType, MutableDictType
+from zipfile import ZipFile, ZIP_DEFLATED
 import itertools
 import json
 import os
+import shutil
 import string
-import zipfile
 
 
 class DownloadBtnMixin(FunctionBase):
     """Download button mixin"""
 
     """Columns and relationships"""
-    _zipf_sfxs = Column(MutableListType)
     btn_classes = Column(MutableListType)
     btn_style = Column(MutableDictType)
     btn_template = Column(String)
@@ -41,11 +41,11 @@ class DownloadBtnMixin(FunctionBase):
     progress_style = Column(MutableDictType)
     progress_template = Column(String)
     use_cache = Column(Boolean)
+    cached = Column(Boolean, default=False)
     form_id = Column(String)
     init_transition_speed = Column(String)
-    filenames = Column(MutableListType)
+    files = Column(MutableListType)
     attachment_filename = Column(String)
-    target = Column(String)
     download_msg = Column(Text)
     callback = Column(Text)
 
@@ -70,8 +70,8 @@ class DownloadBtnMixin(FunctionBase):
     """Identities"""
     @property
     def _id(self):
-        id = inspect(self).identity
-        return id[0] if id else None
+        ids = inspect(self).identity
+        return '-'.join([str(id) for id in ids]) if ids else None
 
     @property
     def model_id(self):
@@ -79,59 +79,88 @@ class DownloadBtnMixin(FunctionBase):
 
     @property
     def btn_id(self):
-        """Html id for the button <div> tag"""
+        """HTML id for the button <div> tag"""
         return self.model_id+'-btn'
 
     @property
     def progress_id(self):
-        """Html id for the progress bar container""" 
+        """HTML id for the progress bar container""" 
         return self.model_id+'-progress'
 
     @property
     def progress_bar_id(self):
-        """Html id for the progress bar"""
+        """HTML id for the progress bar"""
         return self.model_id+'-progress-bar'
     
     @property
     def progress_text_id(self):
-        """Html id for the progress bar text"""
+        """HTML id for the progress bar text"""
         return self.model_id+'-progress-text'
+
+    @property
+    def a_id(self):
+        """HTML id for the <a> download tag"""
+        return self.model_id+'-a'
     
-    """Session keys"""
+    """Download directories and files"""
+    @property
+    def tmpdir(self):
+        return self.model_id+'-tmp'
+
+    @property
+    def zipf_name(self):
+        return self.model_id+'-folder.zip'
+
+    @property
+    def zipf_path(self):
+        return os.path.join(self.tmpdir, self.zipf_name)
+
+    @property
+    def _filename(self):
+        num_files = len(self.files)
+        if num_files == 0:
+            return ''
+        if num_files == 1:
+            return self.get_path(self.files[0])
+        return self.zipf_path
+    
+    @property
+    def _attachment_filename(self):
+        num_files = len(self.files)
+        if num_files == 0:
+            return ''
+        if num_files == 1:
+            return self.attachment_filename or self.get_name(self.files[0])
+        return self.attachment_filename or 'download.zip'
+
+    def get_path(self, f):
+        """Get file path
+
+        f may be a path to the file (str) or tuple (path, filename).
+        """
+        if isinstance(f, str):
+            return f
+        if isinstance(f, tuple):
+            return os.path.join(*f)
+        raise ValueError('Filename must be string or tuple (path, filename)')
+
+    def get_name(self, f):
+        """Get file name"""
+        if isinstance(f, str):
+            return f
+        if isinstance(f, tuple):
+            return f[1]
+        raise ValueError('Filename must be string or tuple (path, filename)')
+
+    """HTML properties"""
     @property
     def _csrf_key(self):
         """Key for the CSRF token"""
         return self.model_id+'csrf'
 
     @property
-    def _response_cached_key(self):
-        """Key for response caching"""
-        return self.model_id+'cache'
-
-    @property
-    def _zipf_name_key(self):
-        """Key for zip file name"""
-        return self.model_id+'zipf-name'
-
-    @property
-    def _zipf_sfx_key(self):
-        """Key for zip file suffix"""
-        return self.model_id+'zipf-sfx'
-    
-    @property
-    def _filename_key(self):
-        """Key for download file name"""
-        return self.model_id+'filename'
-
-    @property
-    def _attachment_filename_key(self):
-        """Key for attachment file name"""
-        return self.model_id+'attachment_filename'
-
-    """Html properties"""
-    @property
     def _btn_classes(self):
-        """Button <div> classes in html format"""
+        """Button <div> classes in HTML format"""
         return ' '.join(self.btn_classes)
 
     @property
@@ -145,7 +174,7 @@ class DownloadBtnMixin(FunctionBase):
     
     @property
     def _progress_classes(self):
-        """Progress bar <div> classes in html format"""
+        """Progress bar <div> classes in HTML format"""
         return ' '.join(self.progress_classes)
 
     @property
@@ -160,7 +189,7 @@ class DownloadBtnMixin(FunctionBase):
         """Web form selector"""
         return 'form' if self.form_id is None else '#'+self.form_id
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Constructor
 
         1. Set function relationships for form handling and file creation 
@@ -171,10 +200,10 @@ class DownloadBtnMixin(FunctionBase):
         Manager defaults are overridden by keyword arguments.
         """
         self._set_function_relationships()
-        self._zipf_sfxs = []
         manager = current_app.extensions['download_btn_manager']
         self.__dict__.update(manager.default_settings)
         self.__dict__.update(kwargs)
+        super().__init__(*args, **kwargs)
 
     """Render download button, progress bar, and script"""
     def render_btn(self):
@@ -215,7 +244,7 @@ class DownloadBtnMixin(FunctionBase):
     def reset(self, stage=None, pct_complete=None):
         """Reset the progress bar
 
-        This method resets the progress bar by replacing its html. You will 
+        This method resets the progress bar by replacing its HTML. You will 
         typically want to reset the progress bar at the start of a new stage.
 
         `reset` executes faster than `report`. Therefore, you may also want 
@@ -254,32 +283,8 @@ class DownloadBtnMixin(FunctionBase):
         data = json.dumps({'speed': speed})
         return 'event: transition_speed\ndata: {}\n\n'.format(data)
 
-    """2. Cache and session management"""
-    def cached(self):
-        """Indicate the response is cached"""
-        return (
-            self.use_cache and self._response_cached_key in session
-            and session[self._response_cached_key]
-        )
-    
-    def clear_session(self):
-        """Clear session and delete associated zip file"""
-        name = session[self._zipf_name_key]
-        sfx = session[self._zipf_sfx_key]
-        try:
-            os.remove('tmp/'+name)
-        except:
-            pass
-        self._zipf_sfxs[sfx] = False
-        session.pop(self._zipf_name_key, None)
-        session.pop(self._zipf_sfx_key, None)
-
-    def clear_csrf(self):
-        """Clear CSRF token from session"""
-        session.pop(self._csrf_key, None)
-
-    """3. Web form handling"""
-    """3.1 Web form handling"""
+    """2. Download process"""
+    """2.1 Web form handling"""
     def _handle_form(self, response):
         """Execute handle form functions with form response."""
         [
@@ -287,38 +292,8 @@ class DownloadBtnMixin(FunctionBase):
             for f in self.handle_form_functions
         ]
     
-    """3.2 File creation"""
-    def _gen_zipf_name(self):
-        """Generate a unique zip file name for the session
-        
-        This method generates a unique zip file name for the session. The 
-        zip file name will be used to store zipped files. It will not be 
-        necessary to zip files if the download button specifies only one 
-        downloaded file.
-        """
-        sfx = self._gen_zipf_sfx()
-        name = '{0}-{1}.zip'.format(self.model_id, sfx)
-        session[self._zipf_name_key] = name
-        session[self._zipf_sfx_key] = sfx
-        return name
-
-    def _gen_zipf_sfx(self):
-        """Generate a unique zipfile suffix for the session
-        
-        Iterate through the zipfile suffixes until an inactive suffix is 
-        found. Use this suffix for the zipfile name and mark it as active.
-
-        If all suffixes in the zipfile suffix list are active, extend the 
-        list.
-        """
-        for i, active in enumerate(self._zipf_sfxs):
-            if not active:
-                self._zipf_sfxs[i] = True
-                return i
-        self._zipf_sfxs.append(True)
-        return len(self._zipf_sfxs) - 1
-
-    def _create_files(self, app, zipf_name):
+    """2.2 File creation"""
+    def _create_files(self, app):
         """Create files for download
 
         This method performs three tasks:
@@ -333,43 +308,53 @@ class DownloadBtnMixin(FunctionBase):
         db.session.add(self)
         gen = itertools.chain(
             *[f() for f in self.create_file_functions],
-            self._zip_files(zipf_name), 
+            self._zip_files(), 
             self._download_ready()
         )
         sse_prev = sse_curr = datetime.now()
         for exp in gen:
             sse_prev, sse_curr = sse_curr, datetime.now()
-            delta = (sse_curr - sse_prev).total_seconds()
-            delta = min(delta, .5)
-            delta = 0 if delta < .02 else delta
-            yield self.transition_speed(str(delta)+'s')
+            speed = (sse_curr - sse_prev).total_seconds()
+            speed = min(speed, .5)
+            speed = 0 if speed < .02 else speed
+            yield self.transition_speed(str(speed)+'s')
             yield exp
 
-    def _zip_files(self, zipf_name):
+    def _zip_files(self):
         """Zip files"""
-        num_files = len(self.filenames)
+        num_files = len(self.files)
         if num_files <= 1:
             return
         stage = 'Zipping Files'
         yield self.reset(stage, 0)
-        zipf = zipfile.ZipFile('tmp/'+zipf_name, 'w', zipfile.ZIP_DEFLATED)
-        for i, filename in enumerate(self.filenames):
+        zipf = ZipFile(self.zipf_path, 'w', ZIP_DEFLATED)
+        for i, f in enumerate(self.files):
             yield self.report(stage, 100.0*i/num_files)
-            zipf.write(filename)
+            self._write_file(zipf, f)
         yield self.report(stage, 100)
         zipf.close()
 
+    def _write_file(self, zipf, f):
+        """Write file f to zip archive"""
+        filepath = self.get_path(f)
+        print('Zipping file', filepath)
+        if os.path.exists(filepath):
+            zipf.write(filepath)
+        else:
+            print('Unable to locate file', filepath)
+
     def _download_ready(self):
         """Send a download ready message"""
-        download_empty = len(self.filenames) == 0
-        text = self._get_progress_text(self.download_msg)
+        download_empty = len(self.files) == 0
+        pct_complete = None if self.download_msg is None else 100
+        text = self._get_progress_text(self.download_msg, pct_complete)
         data = json.dumps({
             'text': text, 'pct_complete': 100, 'callback': self.callback,
             'download_empty': download_empty
         })
         yield 'event: download_ready\ndata: {}\n\n'.format(data)
 
-    """3.3 Download"""
+    """2.3 Download"""
     def _download(self):
         """Download file
         
@@ -378,43 +363,42 @@ class DownloadBtnMixin(FunctionBase):
         1: Return the file as an attachment
         2+: Return the zip archive
         """
-        num_files = len(self.filenames)
-        if num_files == 0:
+        if not self.files:
             return ('', 204)
-        zipf_path = 'tmp/'+session[self._zipf_name_key]
-        filename = self.filenames[0] if num_files == 1 else zipf_path
-        if num_files == 1:
-            attachment_filename = self.attachment_filename or filename
-        else:
-            attachment_filename = self.attachment_filename or 'download.zip'
-        session[self._filename_key] = filename
-        session[self._attachment_filename_key] = attachment_filename
-        return self._get_response()
-
-    def _get_response(self):
-        """Get server response (i.e. attachment)"""
-        filename = session[self._filename_key]
-        if not filename.startswith('/'):
-            filename = os.path.join(os.getcwd(), filename)
-        attachment_filename = session[self._attachment_filename_key]
+        filename = self._filename
         response = send_file(
-            filename, as_attachment=True, 
-            attachment_filename=attachment_filename
+            self._filename, 
+            as_attachment=True, 
+            attachment_filename=self._attachment_filename
         )
-        self._handle_cache(response)
+        self._set_headers(response)
         return response
     
-    def _handle_cache(self, response):
-        """Handle caching"""
-        if not self.use_cache:
-            response.headers['use_cache-Control'] = (
-                'no-use_cache, no-store, must-revalidate'
-            )
-            response.headers['Pragma'] = 'no-use_cache'
-            response.headers['Expires'] = '0'
-            self.clear_session()
+    def _set_headers(self, response):
+        """Set response headers"""
+        if self.use_cache:
+            return
+        response.headers['use_cache-Control'] = (
+            'no-use_cache, no-store, must-revalidate'
+        )
+        response.headers['Pragma'] = 'no-use_cache'
+        response.headers['Expires'] = '0'
+
+    """2.4 Reset button (cache handling)"""
+    def _handle_cache(self):
+        if self.use_cache:
+            self.cached = True
         else:
-            session[self._response_cached_key] = True
+            self.clear_cache()
+
+    def clear_cache(self):
+        if os.path.exists(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
+        self.cached = False
+
+    def clear_csrf(self):
+        """Clear CSRF token from session"""
+        session.pop(self._csrf_key, None)
 
 
 """HandleForm and CreateFile Mixins"""

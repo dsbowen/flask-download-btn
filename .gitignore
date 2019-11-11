@@ -1,5 +1,5 @@
 __pycache__
-tmp
+*tmp
 build
 dist
 flask_download_btn.egg-info
