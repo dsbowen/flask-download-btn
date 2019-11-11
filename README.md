@@ -16,14 +16,12 @@ After setup, we can achieve this with the following:
 ```python
 @app.route('/')
 def index():
-    btn = DownloadBtn.query.filter_by(name='example1').first()
-    if not btn:
-        btn = DownloadBtn()
-        btn.name = 'example1'
-        btn.text = 'Download Example 1'
-        btn.filenames = ['hello_world.txt']
-        db.session.add(btn)
-        db.session.commit()
+    btn = DownloadBtn()
+    btn.name = 'example1'
+    btn.text = 'Download Example 1'
+    btn.files = ['hello_world.txt']
+    db.session.add(btn)
+    db.session.commit()
     return render_template('index.html', download_btn=btn)
 ```
 

@@ -361,8 +361,11 @@ class DownloadBtnMixin(FunctionBase):
         pct_complete = None if self.download_msg is None else 100
         text = self._get_progress_text(self.download_msg, pct_complete)
         data = json.dumps({
-            'text': text, 'pct_complete': 100, 'callback': self.callback,
-            'download_empty': download_empty
+            'text': text,
+            'pct_complete': 100, 
+            'download_empty': download_empty,
+            'filename': self._attachment_filename,
+            'callback': self.callback,
         })
         yield 'event: download_ready\ndata: {}\n\n'.format(data)
 

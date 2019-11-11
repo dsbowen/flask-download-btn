@@ -81,17 +81,11 @@
     function download(e){
         // Prepare download file
         if (!e.data.download_empty) {
-            var header;
-            var filename;
             var url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
             fetch(url, {cache: "no-store"})
-                .then(function(resp){
-                    header = resp.headers.get("Content-Disposition");
-                    filename = header.split("filename=")[1];
-                    return resp.blob();
-                })
+                .then(resp => resp.blob())
                 .then(blob => {
-                    _download({blob: blob, filename: filename});
+                    _download({blob: blob, download: e.data.filename});
                     reset_btn(e);
                 })
         }
@@ -104,7 +98,7 @@
         const a = document.createElement("a");
         a.style.display = "none";
         a.href = url;
-        a.download = e.filename;
+        a.download = e.download;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -121,7 +115,9 @@
             if (e.data.callback !== null){
                 window.location.replace(e.data.callback);
             }
-            $("#{{ btn.btn_id }}").prop('disabled', false);
+            else {
+                $("#{{ btn.btn_id }}").prop('disabled', false);
+            }
             console.log('Download complete'); 
         });
     }
