@@ -116,13 +116,15 @@ class DownloadBtnMixin(FunctionBase):
         return os.path.join(self.tmpdir, self.zipf_name)
 
     @property
-    def _filename(self):
+    def _filepath(self):
         num_files = len(self.files)
         if num_files == 0:
             return ''
         if num_files == 1:
-            return self.get_path(self.files[0])
-        return self.zipf_path
+            path = self.get_path(self.files[0])
+        else:
+            path = self.zipf_path
+        return os.path.join(os.getcwd(), path)
     
     @property
     def _attachment_filename(self):
@@ -338,10 +340,20 @@ class DownloadBtnMixin(FunctionBase):
         """Write file f to zip archive"""
         filepath = self.get_path(f)
         print('Zipping file', filepath)
-        if os.path.exists(filepath):
-            zipf.write(filepath)
-        else:
+        if not os.path.exists(filepath):
             print('Unable to locate file', filepath)
+            return
+        if isinstance(f, str):
+            zipf.write(f)
+            return
+        if isinstance(f, tuple):
+            cwd = os.getcwd()
+            path, filename = f
+            os.chdir(path)
+            zipf.write(filename)
+            os.chdir(cwd)
+            return
+        raise ValueError('Filename must be str or tuple (path, name)')
 
     def _download_ready(self):
         """Send a download ready message"""
@@ -365,9 +377,8 @@ class DownloadBtnMixin(FunctionBase):
         """
         if not self.files:
             return ('', 204)
-        filename = self._filename
         response = send_file(
-            self._filename, 
+            self._filepath, 
             as_attachment=True, 
             attachment_filename=self._attachment_filename
         )
