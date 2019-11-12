@@ -9,7 +9,7 @@ Its key features are:
 
 ## Example: Basic use
 
-Suppose we want to include a download button which downloads `hello_world.txt`. On click, we want to disable the button and re-enable it when the file finishes downloading.
+Suppose we want to include a download button which downloads `hello_world.txt` accessible at `HELLO_WORLD_URL`. On click, we want to disable the button and re-enable it when the file finishes downloading.
 
 After setup, we can achieve this with the following:
 
@@ -17,9 +17,8 @@ After setup, we can achieve this with the following:
 @app.route('/')
 def index():
     btn = DownloadBtn()
-    btn.name = 'example1'
-    btn.text = 'Download Example 1'
-    btn.files = ['hello_world.txt']
+    btn.text = 'Download'
+    btn.downloads = [(HELLO_WORLD_URL, 'hello_world')]
     db.session.add(btn)
     db.session.commit()
     return render_template('index.html', download_btn=btn)
