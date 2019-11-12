@@ -79,46 +79,51 @@
     }
 
     function download(e){
-        // Prepare download file
-        if (!e.data.download_empty) {
-            var url = "{{ url_for('download_btn.download', **btn_kwargs) }}";
-            fetch(url, {cache: "no-store"})
-                .then(resp => resp.blob())
-                .then(blob => {
-                    _download({blob: blob, download: e.data.filename});
-                    reset_btn(e);
-                })
+        // Initial download function
+        if (e.data.downloads.length == 0){
+            return reset_btn(e);
         }
-        else { reset_btn(e); }
+        e.i = 0;
+        _download(e);
     }
 
     function _download(e){
-        // Download
-        const url = window.URL.createObjectURL(e.blob);
-        const a = document.createElement("a");
-        a.style.display = "none";
-        a.href = url;
-        a.download = e.download;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
+        // Recursively download files
+        downloads = e.data.downloads;
+        fetch(downloads[e.i].url, {cache: e.data.cache})
+            .then(resp => resp.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.style.display = "none";
+                a.href = url;
+                a.download = downloads[e.i].filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                if (e.i == downloads.length-1){
+                    reset_btn(e);
+                }
+                else{
+                    e.i++;
+                    _download(e);
+                }
+            })
     }
 
     function reset_btn(e){
         // Reset download button
+        $.post("{{ url_for('download_btn.downloaded', **btn_kwargs) }}");
         if (e.data.text != ''){
             report_progress(e);
         }
         setTimeout(function(){ e.progress.hide(); }, 1000);
-        const reset_url = "{{ url_for('download_btn.reset', **btn_kwargs) }}";
-        $.post(reset_url, function(){
-            if (e.data.callback !== null){
-                window.location.replace(e.data.callback);
-            }
-            else {
-                $("#{{ btn.btn_id }}").prop('disabled', false);
-            }
-            console.log('Download complete'); 
-        });
+        if (e.data.callback !== null){
+            window.location.replace(e.data.callback);
+        }
+        else {
+            $("#{{ btn.btn_id }}").prop('disabled', false);
+        }
+        console.log('Download complete');
     }
 </script>

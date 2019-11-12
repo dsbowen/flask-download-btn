@@ -36,7 +36,7 @@ DEFAULT_SETTINGS = {
     },
     'progress_template': 'download_btn/progress.html',
     'filenames': [],
-    'use_cache': False,
+    'cache': 'no-store',
     'init_transition_speed': '.5s'
 }
 
@@ -80,8 +80,6 @@ class DownloadBtnManager():
         def handle_form(id, btn_cls):
             """Web form handling"""
             btn = self.get_btn(id, btn_cls)
-            if btn.cached:
-                return ''
             btn._handle_form(request.form)
             self.db.session.commit()
             return ''
@@ -90,29 +88,14 @@ class DownloadBtnManager():
         def create_files(id, btn_cls):
             """File creation"""
             btn = self.get_btn(id, btn_cls)
-            if btn.cached:
-                return Response(
-                    btn._download_ready(), mimetype='text/event-stream'
-                )
-            if not os.path.exists(btn.tmpdir):
-                os.mkdir(btn.tmpdir)
             return Response(
                 btn._create_files(app), mimetype='text/event-stream'
             )
 
-        @bp.route('/download-btn/download/<id>/<btn_cls>')
-        def download(id, btn_cls):
-            """Download files"""
+        @bp.route('/download-btn/downloaded/<id>/<btn_cls>', methods=['POST'])
+        def downloaded(id, btn_cls):
             btn = self.get_btn(id, btn_cls)
-            response = btn._download()
-            self.db.session.commit()
-            return response
-        
-        @bp.route('/download-btn/reset/<id>/<btn_cls>', methods=['POST'])
-        def reset(id, btn_cls):
-            """Reset download button"""
-            btn = self.get_btn(id, btn_cls)
-            btn._handle_cache()
+            btn.downloaded = True
             self.db.session.commit()
             return ''
 

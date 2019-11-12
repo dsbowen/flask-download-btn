@@ -33,7 +33,10 @@ class HandleForm(HandleFormMixin, db.Model):
 # 5. Create database tables
 db.create_all()
 
-"""Helper methods"""
+"""Helper methods and download URLs"""
+HELLO_WORLD_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_world.txt'
+HELLO_MOON_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_moon.txt'
+
 def get_btn(key):
     if key in session:
         return DownloadBtn.query.get(session[key])
@@ -55,7 +58,7 @@ def index():
     if not btn:
         btn = DownloadBtn()
         btn.text = 'Download Example 1'
-        btn.files = ['hello_world.txt']
+        btn.downloads = [(HELLO_WORLD_URL, 'hello_world')]
         add_to_session(btn, 'example1')
     return render_template('index.html', download_btn=btn)
 
@@ -66,10 +69,9 @@ def example2():
     if not btn:
         btn = DownloadBtn()
         btn.text = 'Download Example 2'
-        btn.files = [
-            'hello_world.txt', 'hello_moon.txt', ('tmp', 'hello_star.txt')
+        btn.downloads = [
+            (HELLO_WORLD_URL, 'hello_world'), (HELLO_MOON_URL, 'hello_moon')
         ]
-        btn.attachment_filename = 'example2.zip'
         add_to_session(btn, 'example2')
     return render_template('index.html', download_btn=btn)
 
@@ -82,7 +84,7 @@ def example3():
     if not btn:
         btn = DownloadBtn()
         btn.text = 'Download Example 3'
-        btn.files = ['hello_world.txt']
+        btn.downloads = [(HELLO_WORLD_URL, 'hello_world')]
         btn.callback = url_for('download_success')
         add_to_session(btn, 'example3')
     return render_template('index.html', download_btn=btn)
@@ -102,8 +104,13 @@ def example4():
         add_to_session(btn, 'example4')
     return render_template('example4.html', download_btn=btn)
 
-def select_files(btn, response):
-    btn.files = response.getlist('selectFiles')
+def select_files(btn, resp):
+    btn.downloads = []
+    files = resp.getlist('selectFiles')
+    if 'hello_world.txt' in files:
+        btn.downloads.append((HELLO_WORLD_URL, 'hello_world'))
+    if 'hello_moon.txt' in files:
+        btn.downloads.append((HELLO_MOON_URL, 'hello_moon'))
 
 import time
 
@@ -114,28 +121,34 @@ def example5():
     if not btn:
         btn = DownloadBtn()
         btn.text = 'Download Example 5'
-        btn.use_cache = True
+        btn.cache = 'default'
         CreateFile(btn, func=create_file1, kwargs={'seconds': 5})
         CreateFile(btn, func=create_file2, kwargs={'centiseconds': 400})
-        btn.files = ['hello_world.txt', 'hello_moon.txt']
+        btn.downloads = [
+            (HELLO_WORLD_URL, 'hello_world'), (HELLO_MOON_URL, 'hello_moon')
+        ]
         add_to_session(btn, 'example5')
     return render_template('index.html', download_btn=btn)
 
 def create_file1(btn, seconds):
-    yield btn.reset(stage='Download Started', pct_complete=0)
-    for i in range(seconds):
-        yield btn.report('Creating File 1', 100.0*i/seconds)
+    stage = 'Creating File 1'
+    yield btn.reset(stage=stage, pct_complete=0)
+    if not btn.downloaded:
+        for i in range(seconds):
+            yield btn.report(stage, 100.0*i/seconds)
+            time.sleep(1)
+        yield btn.report(stage, 100.0)
         time.sleep(1)
-    yield btn.report('Creating file 1', 100.0)
-    time.sleep(1)
 
 def create_file2(btn, centiseconds):
-    yield btn.reset('Creating File 2', 0)
-    for i in range(centiseconds):
-        yield btn.report('Creating File 2', 100.0*i/centiseconds)
+    stage = 'Creating File 2'
+    yield btn.reset(stage, 0)
+    if not btn.downloaded:
+        for i in range(centiseconds):
+            yield btn.report(stage, 100.0*i/centiseconds)
+            time.sleep(.01)
+        yield btn.report(stage, 100)
         time.sleep(.01)
-    yield btn.report('Download Complete', 100)
-    time.sleep(.01)
 
 @app.route('/example6')
 def example6():
@@ -148,6 +161,7 @@ def example6():
         btn.progress_classes.append('progress-bar-striped')
         btn.progress_classes.append('progress-bar-animated')
         btn.text = 'Download Example 6'
+        btn.cache = 'default'
         HandleForm(btn, func=select_files)
         CreateFile(btn, func=create_file1, kwargs={'seconds': 4})
         CreateFile(btn, func=create_file2, kwargs={'centiseconds': 300})
