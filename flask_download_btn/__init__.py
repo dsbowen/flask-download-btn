@@ -16,7 +16,7 @@ The download process has three stages:
 The manager's routes reflect the stages of the download process.
 """
 
-from flask_download_btn.download_btn_mixin import CreateFileMixin, DownloadBtnMixin, HandleFormMixin
+from flask_download_btn.download_btn_mixin import DownloadBtnMixin, CreateFileMixin, HandleFormMixin
 
 from flask import Blueprint, Response, request, session
 import os
@@ -94,6 +94,7 @@ class DownloadBtnManager():
 
         @bp.route('/download-btn/downloaded/<id>/<btn_cls>', methods=['POST'])
         def downloaded(id, btn_cls):
+            """Indicate that button files have been downloaded"""
             btn = self.get_btn(id, btn_cls)
             btn.downloaded = True
             self.db.session.commit()

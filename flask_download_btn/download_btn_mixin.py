@@ -10,7 +10,7 @@ The download button is responsible for:
 """
 
 from datetime import datetime
-from flask import Markup, current_app, render_template, send_file, session
+from flask import Markup, current_app, render_template, session
 from random import choice
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, PickleType, inspect
 from sqlalchemy.ext.declarative import declared_attr
@@ -19,11 +19,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy_function import FunctionBase
 from sqlalchemy_function import FunctionMixin as FunctionMixinBase
 from sqlalchemy_mutable import MutableListType, MutableDictType
-from zipfile import ZipFile, ZIP_DEFLATED
 import itertools
 import json
 import os
-import shutil
 import string
 
 

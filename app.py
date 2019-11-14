@@ -50,18 +50,18 @@ def add_to_session(btn, key):
 def clear_session():
     session.clear()
 
-"""Examples"""
+"""Example 1: Basic use"""
 @app.route('/')
 def index():
-    """Example 1: Basic use"""
     btn = get_btn('example1')
     if not btn:
         btn = DownloadBtn()
         btn.text = 'Download Example 1'
-        btn.downloads = [(HELLO_WORLD_URL, 'hello_world')]
+        btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
         add_to_session(btn, 'example1')
     return render_template('index.html', download_btn=btn)
 
+"""Example 2: Multiple files"""
 @app.route('/example2')
 def example2():
     """Example 2: Multiple files"""
@@ -70,21 +70,22 @@ def example2():
         btn = DownloadBtn()
         btn.text = 'Download Example 2'
         btn.downloads = [
-            (HELLO_WORLD_URL, 'hello_world'), (HELLO_MOON_URL, 'hello_moon')
+            (HELLO_WORLD_URL, 'hello_world.txt'), 
+            (HELLO_MOON_URL, 'hello_moon.txt')
         ]
         add_to_session(btn, 'example2')
     return render_template('index.html', download_btn=btn)
 
+"""Example 3: Callback routes"""
 from flask import url_for
 
 @app.route('/example3')
 def example3():
-    """Example 3: Callback routes"""
     btn = get_btn('example3')
     if not btn:
         btn = DownloadBtn()
         btn.text = 'Download Example 3'
-        btn.downloads = [(HELLO_WORLD_URL, 'hello_world')]
+        btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
         btn.callback = url_for('download_success')
         add_to_session(btn, 'example3')
     return render_template('index.html', download_btn=btn)
@@ -93,9 +94,9 @@ def example3():
 def download_success():
     return 'Download Successful'
 
+"""Example 4: Form handling"""
 @app.route('/example4')
 def example4():
-    """Example 4: Form handling"""
     btn = get_btn('example4')
     if not btn:
         btn = DownloadBtn()
@@ -108,15 +109,15 @@ def select_files(btn, resp):
     btn.downloads = []
     files = resp.getlist('selectFiles')
     if 'hello_world.txt' in files:
-        btn.downloads.append((HELLO_WORLD_URL, 'hello_world'))
+        btn.downloads.append((HELLO_WORLD_URL, 'hello_world.txt'))
     if 'hello_moon.txt' in files:
-        btn.downloads.append((HELLO_MOON_URL, 'hello_moon'))
+        btn.downloads.append((HELLO_MOON_URL, 'hello_moon.txt'))
 
+"""Example 5: File creation"""
 import time
 
 @app.route('/example5')
 def example5():
-    """Example 5: File creation"""
     btn = get_btn('example5')
     if not btn:
         btn = DownloadBtn()
@@ -125,7 +126,8 @@ def example5():
         CreateFile(btn, func=create_file1, kwargs={'seconds': 5})
         CreateFile(btn, func=create_file2, kwargs={'centiseconds': 400})
         btn.downloads = [
-            (HELLO_WORLD_URL, 'hello_world'), (HELLO_MOON_URL, 'hello_moon')
+            (HELLO_WORLD_URL, 'hello_world.txt'), 
+            (HELLO_MOON_URL, 'hello_moon.txt')
         ]
         add_to_session(btn, 'example5')
     return render_template('index.html', download_btn=btn)
@@ -150,9 +152,9 @@ def create_file2(btn, centiseconds):
         yield btn.report(stage, 100)
         time.sleep(.01)
 
+"""Example 6: With style"""
 @app.route('/example6')
 def example6():
-    """Example 6: With style"""
     btn = get_btn('example6')
     if not btn:
         btn = DownloadBtn()
