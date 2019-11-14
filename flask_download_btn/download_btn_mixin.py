@@ -265,21 +265,22 @@ class DownloadBtnMixin(FunctionBase):
 
         Progress reports are yielded as server sent events.
         """
-        app.app_context().push()
-        db = app.extensions['download_btn_manager'].db
-        db.session.add(self)
-        gen = itertools.chain(
-            *[f() for f in self.create_file_functions], 
-            self._download_ready()
-        )
-        sse_prev = sse_curr = datetime.now()
-        for exp in gen:
-            sse_prev, sse_curr = sse_curr, datetime.now()
-            speed = (sse_curr - sse_prev).total_seconds()
-            speed = min(speed, .5)
-            speed = 0 if speed < .02 else speed
-            yield self.transition_speed(str(speed)+'s')
-            yield exp
+        with app.app_context():
+            db = app.extensions['download_btn_manager'].db
+            db.session.add(self)
+            gen = itertools.chain(
+                *[f() for f in self.create_file_functions], 
+                self._download_ready()
+            )
+            sse_prev = sse_curr = datetime.now()
+            for exp in gen:
+                sse_prev, sse_curr = sse_curr, datetime.now()
+                speed = (sse_curr - sse_prev).total_seconds()
+                speed = min(speed, .5)
+                speed = 0 if speed < .02 else speed
+                yield self.transition_speed(str(speed)+'s')
+                yield exp
+            db.session.close()
 
     def _download_ready(self):
         """Send a download ready message"""
