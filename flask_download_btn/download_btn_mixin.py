@@ -37,11 +37,11 @@ class DownloadBtnMixin(FunctionBase):
     progress_style = Column(MutableDictType)
     progress_template = Column(String)
     cache = Column(String)
-    downloaded = Column(Boolean, default=False)
     form_id = Column(String)
     init_transition_speed = Column(String)
     downloads = Column(MutableListType)
     download_msg = Column(Text)
+    downloaded = Column(Boolean, default=False)
     callback = Column(Text)
 
     @declared_attr
@@ -277,7 +277,8 @@ class DownloadBtnMixin(FunctionBase):
                 speed = 0 if speed < .02 else speed
                 yield self.transition_speed(str(speed)+'s')
                 yield exp
-        yield self._download_ready()
+            download_ready_event = self._download_ready()
+        yield download_ready_event
 
     def _download_ready(self):
         """Send a download ready message"""
