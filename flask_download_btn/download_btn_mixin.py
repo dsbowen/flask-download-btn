@@ -268,10 +268,7 @@ class DownloadBtnMixin(FunctionBase):
         with app.app_context():
             db = app.extensions['download_btn_manager'].db
             db.session.add(self)
-            gen = itertools.chain(
-                *[f() for f in self.create_file_functions], 
-                self._download_ready()
-            )
+            gen = itertools.chain(*[f() for f in self.create_file_functions])
             sse_prev = sse_curr = datetime.now()
             for exp in gen:
                 sse_prev, sse_curr = sse_curr, datetime.now()
@@ -280,7 +277,7 @@ class DownloadBtnMixin(FunctionBase):
                 speed = 0 if speed < .02 else speed
                 yield self.transition_speed(str(speed)+'s')
                 yield exp
-            db.session.close()
+        yield self._download_ready()
 
     def _download_ready(self):
         """Send a download ready message"""
@@ -293,7 +290,7 @@ class DownloadBtnMixin(FunctionBase):
             'cache': self.cache,
             'callback': self.callback,
         })
-        yield 'event: download_ready\ndata: {}\n\n'.format(data)
+        return 'event: download_ready\ndata: {}\n\n'.format(data)
 
 
 """HandleForm and CreateFile Mixins"""
