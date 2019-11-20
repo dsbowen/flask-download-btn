@@ -16,7 +16,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, Pickl
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
-from sqlalchemy_function import FunctionBase
+from sqlalchemy_function import FunctionRelator
 from sqlalchemy_function import FunctionMixin as FunctionMixinBase
 from sqlalchemy_mutable import MutableListType, MutableDictType
 import itertools
@@ -25,7 +25,7 @@ import os
 import string
 
 
-class DownloadBtnMixin(FunctionBase):
+class DownloadBtnMixin(FunctionRelator):
     """Download button mixin"""
 
     """Columns and relationships"""
@@ -159,7 +159,6 @@ class DownloadBtnMixin(FunctionBase):
 
         Manager defaults are overridden by keyword arguments.
         """
-        self._set_function_relationships()
         manager = current_app.extensions['download_btn_manager']
         self.__dict__.update(manager.default_settings)
         self.__dict__.update(kwargs)
