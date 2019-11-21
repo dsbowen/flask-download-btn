@@ -267,17 +267,21 @@ class DownloadBtnMixin(FunctionRelator):
         with app.app_context():
             db = app.extensions['download_btn_manager'].db
             db.session.add(self)
-            gen = itertools.chain(*[f() for f in self.create_file_functions])
             sse_prev = sse_curr = datetime.now()
-            for exp in gen:
-                sse_prev, sse_curr = sse_curr, datetime.now()
-                speed = (sse_curr - sse_prev).total_seconds()
-                speed = min(speed, .5)
-                speed = 0 if speed < .02 else speed
-                yield self.transition_speed(str(speed)+'s')
-                yield exp
+            for f in self.create_file_functions:
+                for exp in f():
+                    yield exp
+                    sse_prev, sse_curr = sse_curr, datetime.now()
+                    yield self._update_transition_speed(sse_prev, sse_curr)
             download_ready_event = self._download_ready()
         yield download_ready_event
+
+    def _update_transition_speed(self, sse_prev, sse_curr):
+        """Update transition speed of progress bar"""
+        speed = (sse_curr - sse_prev).total_seconds()
+        speed = min(speed, .5)
+        speed = 0 if speed < .02 else speed
+        return self.transition_speed(str(speed)+'s')
 
     def _download_ready(self):
         """Send a download ready message"""

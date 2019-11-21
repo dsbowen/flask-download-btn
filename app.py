@@ -37,14 +37,14 @@ db.create_all()
 HELLO_WORLD_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_world.txt'
 HELLO_MOON_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_moon.txt'
 
-def get_btn(key):
-    if key in session:
-        return DownloadBtn.query.get(session[key])
-
 def add_to_session(btn, key):
     db.session.add(btn)
     db.session.commit()
     session[key] = btn.id
+
+def get_btn(key):
+    if key in session:
+        return DownloadBtn.query.get(session[key])
 
 @app.before_first_request
 def clear_session():

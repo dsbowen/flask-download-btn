@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flask-download-btn",
-    version="0.0.12",
+    version="0.0.13",
     author="Dillon Bowen",
     author_email="dsbowen@wharton.upenn.edu",
     description="Flask-Download-Btn defines a SQLALchemy Mixin for creating Bootstrap download buttons in a Flask application.",
