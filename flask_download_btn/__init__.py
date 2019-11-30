@@ -37,6 +37,7 @@ DEFAULT_SETTINGS = {
     'progress_template': 'download_btn/progress.html',
     'filenames': [],
     'cache': 'no-store',
+    'downloads': [],
     'init_transition_speed': '.5s'
 }
 
