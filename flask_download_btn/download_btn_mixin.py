@@ -1,6 +1,6 @@
 """Download button mixin
 
-This file defines a download button mixin, as well as mixins for form handling functions and file creation functions.
+This file defines a download button Mixin, as well as helper `Function` models for handling forms and creating files.
 
 The download button is responsible for:
 1. Rendering a download button, progress bar, and script
@@ -9,16 +9,18 @@ The download button is responsible for:
     2.2 File creation
 """
 
-from datetime import datetime
 from flask import Markup, current_app, render_template, session
-from random import choice
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, PickleType, inspect
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
-from sqlalchemy_function import FunctionRelator
-from sqlalchemy_function import FunctionMixin as FunctionMixinBase
+from sqlalchemy_function import FunctionMixin as FunctionMixinBase, FunctionRelator
 from sqlalchemy_mutable import MutableListType, MutableDictType
+from sqlalchemy_mutablesoup import MutableSoupType
+
+from copy import copy
+from datetime import datetime
+from random import choice
 import itertools
 import json
 import os
@@ -29,16 +31,10 @@ class DownloadBtnMixin(FunctionRelator):
     """Download button mixin"""
 
     """Columns and relationships"""
-    btn_classes = Column(MutableListType)
-    btn_style = Column(MutableDictType)
-    btn_template = Column(String)
-    text = Column(Text)
-    progress_classes = Column(MutableListType)
-    progress_style = Column(MutableDictType)
-    progress_template = Column(String)
+    btn = Column(MutableSoupType)
+    progress = Column(MutableSoupType)
     cache = Column(String)
     form_id = Column(String)
-    init_transition_speed = Column(String)
     downloads = Column(MutableListType)
     download_msg = Column(Text)
     downloaded = Column(Boolean, default=False)
@@ -88,9 +84,9 @@ class DownloadBtnMixin(FunctionRelator):
         return self.model_id+'-progress-bar'
     
     @property
-    def progress_text_id(self):
+    def progress_txt_id(self):
         """HTML id for the progress bar text"""
-        return self.model_id+'-progress-text'
+        return self.model_id+'-progress-txt'
 
     @property
     def a_id(self):
@@ -99,35 +95,17 @@ class DownloadBtnMixin(FunctionRelator):
 
     """HTML properties"""
     @property
+    def btn_tag(self):
+        return self.btn.select_one('#'+self.btn_id)
+    
+    @property
+    def progress_bar_tag(self):
+        return self.progress.select_one('#'+self.progress_bar_id)
+
+    @property
     def _csrf_key(self):
         """Key for the CSRF token"""
         return self.model_id+'csrf'
-
-    @property
-    def _btn_classes(self):
-        """Button <div> classes in HTML format"""
-        return ' '.join(self.btn_classes)
-
-    @property
-    def _btn_style(self):
-        return self._style(self.btn_style)
-    
-    @property
-    def _text(self):
-        """Button text"""
-        return self.text or ''
-    
-    @property
-    def _progress_classes(self):
-        """Progress bar <div> classes in HTML format"""
-        return ' '.join(self.progress_classes)
-
-    @property
-    def _progress_style(self):
-        return self._style(self.progress_style)
-
-    def _style(self, style):
-        return ' '.join([key+': '+val+';' for key, val in style.items()])
 
     @property
     def _form(self):
@@ -136,8 +114,18 @@ class DownloadBtnMixin(FunctionRelator):
 
     @property
     def _downloads(self):
-        downloads = []
-        for download in self.downloads:
+        """Return a `clean_downloads` list of (url, filename) tuples
+
+        `clean_downloads` is derived from the `downloads` and 
+        `tmp_downloads` attributes. `tmp_downloads` is cleared on database 
+        commit, and should be used for serving temporary files such as data 
+        urls.
+        """
+        clean_downloads = []
+        tmp_downloads = []
+        if hasattr(self, 'tmp_downloads') and self.tmp_downloads:
+            tmp_downloads = self.tmp_downloads
+        for download in self.downloads + tmp_downloads:
             if isinstance(download, tuple):
                 url, filename = download
             elif isinstance(download, str):
@@ -146,28 +134,42 @@ class DownloadBtnMixin(FunctionRelator):
                 raise ValueError(
                     'Download must be str (url) or tuple (url, filename)'
                 )
-            downloads.append({'url': url, 'filename': filename})
-        return downloads
+            clean_downloads.append({'url': url, 'filename': filename})
+        return clean_downloads
 
     def __init__(self, *args, **kwargs):
         """Constructor
 
-        1. Set function relationships for form handling and file creation 
-        function models.
-        2. Set a blank zip file suffix dictionary
-        3. Set attributes
-
         Manager defaults are overridden by keyword arguments.
         """
         manager = current_app.extensions['download_btn_manager']
-        self.__dict__.update(manager.default_settings)
-        self.__dict__.update(kwargs)
+        manager.db.session.add(self)
+        manager.db.session.flush([self])
+        self.btn = render_template(
+            'download_btn/button.html', btn=self
+        )
+        self.progress = render_template(
+            'download_btn/progress.html', btn=self
+        )
+        settings = copy(manager.settings)
+        settings.update(kwargs)
+        [setattr(self, key, val) for key, val in settings.items()]
         super().__init__(*args, **kwargs)
+
+    """Modify button text"""
+    @property
+    def btn_text(self):
+        return self.btn_tag.text
+
+    @btn_text.setter
+    def btn_text(self, val):
+        self.btn_tag.string = val or ''
+        self.btn.changed()
 
     """Render download button, progress bar, and script"""
     def render_btn(self):
         """Render the download button"""
-        return Markup(render_template(self.btn_template, btn=self))
+        return Markup(str(self.btn))
 
     def render_progress(self):
         """Render the progress bar
@@ -176,10 +178,7 @@ class DownloadBtnMixin(FunctionRelator):
         container may be updated with progress reports during file creation.
         """
         container = '<div id="{0}" style="display: none;">{1}</div>'
-        content = render_template(
-            self.progress_template, btn=self, pct_complete=0, text=''
-        )
-        return Markup(container.format(self.progress_id, content))
+        return Markup(container.format(self.progress_id, str(self.progress)))
 
     def script(self):
         """Render the download button script
@@ -209,17 +208,12 @@ class DownloadBtnMixin(FunctionRelator):
 
         This method resets the progress bar by replacing its HTML. You will 
         typically want to reset the progress bar at the start of a new stage.
-
-        `reset` executes faster than `report`. Therefore, you may also want 
-        to use `reset` instead of `report` when sending rapid progress 
-        updates (~10ms or faster).
         """
         text = self._get_progress_text(stage, pct_complete)
-        html = render_template(
-            self.progress_template, 
-            btn=self, pct_complete=pct_complete, text=text
-        )
-        data = json.dumps({'html': html})
+        self.progress.select_one('#'+self.progress_txt_id).string = text
+        pct_complete = str((pct_complete or 0)) + '%'
+        self.progress.select_one('#'+self.progress_bar_id)['width'] = pct_complete
+        data = json.dumps({'html': str(self.progress)})
         return 'event: reset\ndata: {}\n\n'.format(data)
 
     def report(self, stage=None, pct_complete=None):
@@ -277,7 +271,12 @@ class DownloadBtnMixin(FunctionRelator):
         yield download_ready_event
 
     def _update_transition_speed(self, sse_prev, sse_curr):
-        """Update transition speed of progress bar"""
+        """Update transition speed of progress bar
+        
+        Note that transition speeds of <.02 will not render properly. 
+        Therefore, set the transition speed to 0 if the speed would 
+        otherwise be <.02.
+        """
         speed = (sse_curr - sse_prev).total_seconds()
         speed = min(speed, .5)
         speed = 0 if speed < .02 else speed
@@ -297,7 +296,6 @@ class DownloadBtnMixin(FunctionRelator):
         return 'event: download_ready\ndata: {}\n\n'.format(data)
 
 
-"""HandleForm and CreateFile Mixins"""
 class FunctionMixin(FunctionMixinBase):
     @property
     def parent(self):

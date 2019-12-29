@@ -21,7 +21,7 @@ class DownloadBtn(DownloadBtnMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
-# 4. Create CreateFile and HandleForm models
+# 4. Create `CreateFile` and `HandleForm` models
 class CreateFile(CreateFileMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bnt_id = db.Column(db.Integer, db.ForeignKey('download_btn.id'))
@@ -53,41 +53,37 @@ def clear_session():
 """Example 1: Basic use"""
 @app.route('/')
 def index():
-    btn = get_btn('example1')
+    btn = get_btn('basic')
     if not btn:
         btn = DownloadBtn()
-        btn.text = 'Download Example 1'
         btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
-        add_to_session(btn, 'example1')
+        add_to_session(btn, 'basic')
     return render_template('index.html', download_btn=btn)
 
 """Example 2: Multiple files"""
-@app.route('/example2')
-def example2():
-    """Example 2: Multiple files"""
-    btn = get_btn('example2')
+@app.route('/mutli-file')
+def multi_file():
+    btn = get_btn('mutli-file')
     if not btn:
         btn = DownloadBtn()
-        btn.text = 'Download Example 2'
         btn.downloads = [
             (HELLO_WORLD_URL, 'hello_world.txt'), 
             (HELLO_MOON_URL, 'hello_moon.txt')
         ]
-        add_to_session(btn, 'example2')
+        add_to_session(btn, 'mutli-file')
     return render_template('index.html', download_btn=btn)
 
 """Example 3: Callback routes"""
 from flask import url_for
 
-@app.route('/example3')
-def example3():
-    btn = get_btn('example3')
+@app.route('/callback')
+def callback():
+    btn = get_btn('callback')
     if not btn:
         btn = DownloadBtn()
-        btn.text = 'Download Example 3'
         btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
         btn.callback = url_for('download_success')
-        add_to_session(btn, 'example3')
+        add_to_session(btn, 'callback')
     return render_template('index.html', download_btn=btn)
 
 @app.route('/download-success')
@@ -95,16 +91,16 @@ def download_success():
     return 'Download Successful'
 
 """Example 4: Form handling"""
-@app.route('/example4')
-def example4():
-    btn = get_btn('example4')
+@app.route('/form-handling')
+def form_handling():
+    btn = get_btn('form-handling')
     if not btn:
         btn = DownloadBtn()
-        btn.text = 'Download Example 4'
-        HandleForm(btn, func=select_files)
-        add_to_session(btn, 'example4')
-    return render_template('example4.html', download_btn=btn)
+        HandleForm.select_files(btn)
+        add_to_session(btn, 'form-handling')
+    return render_template('form-handling.html', download_btn=btn)
 
+@HandleForm.register
 def select_files(btn, resp):
     btn.downloads = []
     files = resp.getlist('selectFiles')
@@ -116,22 +112,22 @@ def select_files(btn, resp):
 """Example 5: File creation"""
 import time
 
-@app.route('/example5')
-def example5():
-    btn = get_btn('example5')
+@app.route('/file-creation')
+def file_creation():
+    btn = get_btn('file-creation')
     if not btn:
         btn = DownloadBtn()
-        btn.text = 'Download Example 5'
         btn.cache = 'default'
-        CreateFile(btn, func=create_file1, kwargs={'seconds': 5})
-        CreateFile(btn, func=create_file2, kwargs={'centiseconds': 400})
+        CreateFile.create_file1(btn, seconds=5)
+        CreateFile.create_file2(btn, centiseconds=400)
         btn.downloads = [
             (HELLO_WORLD_URL, 'hello_world.txt'), 
             (HELLO_MOON_URL, 'hello_moon.txt')
         ]
-        add_to_session(btn, 'example5')
+        add_to_session(btn, 'file-creation')
     return render_template('index.html', download_btn=btn)
 
+@CreateFile.register
 def create_file1(btn, seconds):
     stage = 'Creating File 1'
     yield btn.reset(stage=stage, pct_complete=0)
@@ -142,6 +138,7 @@ def create_file1(btn, seconds):
         yield btn.report(stage, 100.0)
         time.sleep(1)
 
+@CreateFile.register
 def create_file2(btn, centiseconds):
     stage = 'Creating File 2'
     yield btn.reset(stage, 0)
@@ -152,24 +149,46 @@ def create_file2(btn, centiseconds):
         yield btn.report(stage, 100)
         time.sleep(.01)
 
-"""Example 6: With style"""
-@app.route('/example6')
-def example6():
-    btn = get_btn('example6')
+"""Example 6: Temporary file creation"""
+from base64 import b64encode
+
+@app.route('/tmp-files')
+def tmp_files():
+    btn = get_btn('tmp-files')
     if not btn:
         btn = DownloadBtn()
-        btn.btn_classes.remove('btn-primary')
-        btn.btn_classes.append('btn-outline-primary')
-        btn.progress_classes.append('progress-bar-striped')
-        btn.progress_classes.append('progress-bar-animated')
-        btn.text = 'Download Example 6'
+        CreateFile.create_tmp_file(btn)
+        add_to_session(btn, 'tmp-files')
+    return render_template('index.html', download_btn=btn)
+
+@CreateFile.register
+def create_tmp_file(btn):
+    stage = 'Creating temporary file'
+    yield btn.reset(stage, 0)
+    data = b64encode(b'Hello World')
+    url = 'data:text/plain;base64,' + data.decode()
+    btn.tmp_downloads = [(url, 'tmp_file.txt')]
+    yield btn.report(stage, 100)
+
+"""Example 7: With style"""
+@app.route('/style')
+def style():
+    btn = get_btn('style')
+    if not btn:
+        btn = DownloadBtn()
+        btn.btn_text = 'Custom Button Text'
+        btn.btn_tag['class'].remove('btn-primary')
+        btn.btn_tag['class'].append('btn-outline-primary')
+        btn.progress_bar_tag['class'] += [
+            'progress-bar-striped', 'progress-bar-animated'
+        ]
         btn.cache = 'default'
-        HandleForm(btn, func=select_files)
-        CreateFile(btn, func=create_file1, kwargs={'seconds': 4})
-        CreateFile(btn, func=create_file2, kwargs={'centiseconds': 300})
+        HandleForm.select_files(btn)
+        CreateFile.create_file1(btn, seconds=4)
+        CreateFile.create_file2(btn, centiseconds=300)
         btn.download_msg = 'Download Complete'
-        add_to_session(btn, 'example6')
-    return render_template('example6.html', download_btn=btn)
+        add_to_session(btn, 'style')
+    return render_template('style.html', download_btn=btn)
 
 if __name__ == '__main__':
     app.run(debug=True)

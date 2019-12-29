@@ -23,22 +23,8 @@ import os
 
 """Default settings for download button models"""
 DEFAULT_SETTINGS = {
-    'btn_classes': ['btn', 'btn-primary', 'w-100'],
-    'btn_style': {},
-    'btn_template': 'download_btn/button.html',
-    'progress_classes': ['progress-bar'],
-    'progress_style': {
-        'height': '25px',
-        'background-color': '#C8C8C8',
-        'margin-top': '10px',
-        'margin-bottom': '10px',
-        'box-shadow': '0 1px 2px rgba(0, 0, 0, 0.25) inset'
-    },
-    'progress_template': 'download_btn/progress.html',
-    'filenames': [],
     'cache': 'no-store',
     'downloads': [],
-    'init_transition_speed': '.5s'
 }
 
 
@@ -60,14 +46,14 @@ class DownloadBtnManager():
         will send to the client.
         """
         self.db = db
-        self.default_settings = DEFAULT_SETTINGS
-        self.default_settings.update(kwargs)
+        self.settings = DEFAULT_SETTINGS
+        self.settings.update(kwargs)
         if app is not None:
             self._init_app(app)
     
     def init_app(self, app, db=None, **kwargs):
         self.db = db or self.db
-        self.default_settings.update(kwargs)
+        self.settings.update(kwargs)
         self._init_app(app)
 
     def _init_app(self, app):

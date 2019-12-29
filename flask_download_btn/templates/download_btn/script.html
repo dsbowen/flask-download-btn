@@ -67,13 +67,14 @@
 
     function report_progress(e){
         // Update the progress bar with a progress report
-        $("#{{ btn.progress_text_id }}").text(e.data.text);
+        $("#{{ btn.progress_txt_id }}").text(e.data.text);
         show_bar(e.progress);
         e.progress_bar.width(e.data.pct_complete+"%");
     }
 
     function show_bar(progress){
         if (progress.is(":hidden")){
+            console.log('showing');
             progress.show();
         }
     }
