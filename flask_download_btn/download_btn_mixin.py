@@ -33,7 +33,7 @@ class DownloadBtnMixin(FunctionRelator):
     """Columns and relationships"""
     btn = Column(MutableSoupType)
     progress = Column(MutableSoupType)
-    cache = Column(String)
+    cache = Column(String, default='no-store')
     form_id = Column(String)
     downloads = Column(MutableListType)
     download_msg = Column(Text)
@@ -151,9 +151,7 @@ class DownloadBtnMixin(FunctionRelator):
         self.progress = render_template(
             'download_btn/progress.html', btn=self
         )
-        settings = copy(manager.settings)
-        settings.update(kwargs)
-        [setattr(self, key, val) for key, val in settings.items()]
+        self.downloads = []
         super().__init__(*args, **kwargs)
 
     """Modify button text"""

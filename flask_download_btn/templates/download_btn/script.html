@@ -1,4 +1,4 @@
-<script>
+<script id="{{ btn.model_id }}">
     /* Download button script
 
     The download process has three stages:
@@ -74,7 +74,6 @@
 
     function show_bar(progress){
         if (progress.is(":hidden")){
-            console.log('showing');
             progress.show();
         }
     }

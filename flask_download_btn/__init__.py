@@ -5,8 +5,7 @@ in Flask.
 
 This file defines the download button manager. The manager's functions are:
 1. Register download button classes
-2. Hold default settings for download button models
-3. Register routes used by the download button
+2. Register routes used by the download button
 
 The download process has three stages:
 1. Web form handling
@@ -21,12 +20,6 @@ from flask_download_btn.download_btn_mixin import DownloadBtnMixin, CreateFileMi
 from flask import Blueprint, Response, request, session
 import os
 
-"""Default settings for download button models"""
-DEFAULT_SETTINGS = {
-    'cache': 'no-store',
-    'downloads': [],
-}
-
 
 class DownloadBtnManager():
     """Download button manager"""
@@ -38,7 +31,7 @@ class DownloadBtnManager():
         cls.registered_classes[btn_cls.__name__] = btn_cls
         return btn_cls
 
-    def __init__(self, app=None, db=None, **kwargs):
+    def __init__(self, app=None, db=None):
         """Constructor
 
         The constructor updates default settings for buttons. It also 
@@ -46,14 +39,11 @@ class DownloadBtnManager():
         will send to the client.
         """
         self.db = db
-        self.settings = DEFAULT_SETTINGS
-        self.settings.update(kwargs)
         if app is not None:
             self._init_app(app)
     
-    def init_app(self, app, db=None, **kwargs):
+    def init_app(self, app, db=None):
         self.db = db or self.db
-        self.settings.update(kwargs)
         self._init_app(app)
 
     def _init_app(self, app):
