@@ -1,6 +1,7 @@
 """Download button mixin
 
-This file defines a download button Mixin, as well as helper `Function` models for handling forms and creating files.
+This file defines a download button Mixin, as well as helper `Function` models
+for handling forms and creating files.
 
 The download button is responsible for:
 1. Rendering a download button, progress bar, and script
@@ -10,11 +11,12 @@ The download button is responsible for:
 """
 
 from flask import Markup, current_app, render_template, session
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, PickleType, inspect
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, inspect
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
 from sqlalchemy_function import FunctionMixin as FunctionMixinBase, FunctionRelator
+from sqlalchemy_modelid import ModelIdBase
 from sqlalchemy_mutable import MutableListType, MutableDictType
 from sqlalchemy_mutablesoup import MutableSoupType
 
@@ -27,7 +29,7 @@ import os
 import string
 
 
-class DownloadBtnMixin(FunctionRelator):
+class DownloadBtnMixin(FunctionRelator, ModelIdBase):
     """Download button mixin"""
 
     """Columns and relationships"""
@@ -65,8 +67,9 @@ class DownloadBtnMixin(FunctionRelator):
         return '-'.join([str(id) for id in ids]) if ids else None
 
     @property
-    def model_id(self):
-        return type(self).__name__+'-'+str(self._id)
+    def script_id(self):
+        """HTML id for button script"""
+        return self.model_id+'-script'
 
     @property
     def btn_id(self):
@@ -118,7 +121,7 @@ class DownloadBtnMixin(FunctionRelator):
 
         `clean_downloads` is derived from the `downloads` and 
         `tmp_downloads` attributes. `tmp_downloads` is cleared on database 
-        commit, and should be used for serving temporary files such as data 
+        commit, and should be used for serving temporary files through data 
         urls.
         """
         clean_downloads = []
@@ -138,10 +141,7 @@ class DownloadBtnMixin(FunctionRelator):
         return clean_downloads
 
     def __init__(self, *args, **kwargs):
-        """Constructor
-
-        Manager defaults are overridden by keyword arguments.
-        """
+        """Constructor"""
         manager = current_app.extensions['download_btn_manager']
         manager.db.session.add(self)
         manager.db.session.flush([self])
@@ -161,13 +161,12 @@ class DownloadBtnMixin(FunctionRelator):
 
     @btn_text.setter
     def btn_text(self, val):
-        self.btn_tag.string = val or ''
-        self.btn.changed()
+        self.btn.set_element('button', val)
 
     """Render download button, progress bar, and script"""
     def render_btn(self):
         """Render the download button"""
-        return Markup(str(self.btn))
+        return self.btn.render()
 
     def render_progress(self):
         """Render the progress bar
