@@ -16,11 +16,11 @@ After setup, we can achieve this with the following:
 ```python
 @app.route('/')
 def index():
-    btn = DownloadBtn()
-    btn.text = 'Download'
-    btn.downloads = [(HELLO_WORLD_URL, 'hello_world')]
-    db.session.add(btn)
-    db.session.commit()
+    btn = get_btn('basic')
+    if not btn:
+        btn = DownloadBtn()
+        btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
+        add_to_session(btn, 'basic')
     return render_template('index.html', download_btn=btn)
 ```
 

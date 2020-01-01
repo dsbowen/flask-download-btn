@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="flask-download-btn",
+    name="flask-download-btn-dsbowen",
     version="0.0.15",
     author="Dillon Bowen",
     author_email="dsbowen@wharton.upenn.edu",
