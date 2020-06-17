@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="None">
+  
+  
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <title>Flask-Download-Button</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" />
+  <link href="css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Home";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="js/jquery-2.1.1.min.js" defer></script>
+  <script src="js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="." class="icon icon-home"> Flask-Download-Button</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href=".">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quickstart">Quickstart</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#citation">Citation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#license">License</a>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Tutorial</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="setup/">Setup</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="basic/">Basic use</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="form/">Form handling</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="create/">File creation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="style/">Style</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">API</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="manager/">Manager</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="download_btn_mixin/">Download mixin</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="contribute/">Contribute</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">Flask-Download-Button</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Home</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/dsbowen/flask-download-btn/edit/master/docs_md/index.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="flask-download-button">Flask Download Button</h1>
+<p>Flask-Download-Btn defines a <a href="https://docs.sqlalchemy.org/en/13/orm/extensions/declarative/mixins.html">SQLALchemy Mixin</a> for creating <a href="https://getbootstrap.com/">Bootstrap</a> download buttons in a <a href="https://palletsprojects.com/p/flask/">Flask</a> application.</p>
+<p>Its features include:</p>
+<ol>
+<li><strong>Automatic enabling and disabling.</strong> A download button is automatically disabled on click and re-enabled on download completion.</li>
+<li><strong>CSRF protection.</strong> The download button checks for a CSRF authentication token to ensure the client has permission to download the requested file.</li>
+<li><strong>Web form handling.</strong> Download buttons are responsive to web forms.</li>
+<li><strong>Pre-download operations.</strong> Download buttons can easily perform operations before files are downloaded, making it easy to create temporary download files.</li>
+<li><strong>Progress bar.</strong> Update your clients on download progress with server sent events.</li>
+</ol>
+<h2 id="installation">Installation</h2>
+<pre><code>$ pip install flask-download-btn
+</code></pre>
+
+<h2 id="quickstart">Quickstart</h2>
+<p>Our folder structure will look like:</p>
+<pre><code>templates/
+    index.html
+app.py
+</code></pre>
+
+<p>In <code>templates/index.html</code>, paste the following Jinja template:</p>
+<pre><code class="html">&lt;html&gt;
+    &lt;head&gt;
+        &lt;!-- include Bootstrap CSS and Javascript --&gt;
+        &lt;link rel=&quot;stylesheet&quot; href=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css&quot;&gt;
+        &lt;script src=&quot;https://code.jquery.com/jquery-3.4.1.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script src=&quot;https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js&quot;&gt;&lt;/script&gt;
+        &lt;script src=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js&quot;&gt;&lt;/script&gt;
+        &lt;!-- include download button script --&gt;
+        {{ download_btn.script() }}
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;!-- render the download button and progress bar --&gt;
+        {{ download_btn.btn.render() }}
+        {{ download_btn.render_progress() }}
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>In <code>app.py</code>:</p>
+<pre><code class="python">from flask_download_btn import DownloadBtnManager, DownloadBtnMixin
+
+from flask import Flask, render_template, session
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.ext.orderinglist import ordering_list
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+# initialize download button manager with application and database
+download_btn_manager = DownloadBtnManager(app, db=db)
+
+# create download button model and register it with the manager
+@DownloadBtnManager.register
+class DownloadBtn(DownloadBtnMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+# create the database and clear the session when the app starts
+@app.before_first_request
+def before_first_request():
+    db.create_all()
+    session.clear()
+
+HELLO_WORLD_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_world.txt'
+
+# basic use
+@app.route('/')
+def index():
+    btn = DownloadBtn()
+    btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
+    db.session.commit()
+    return render_template('index.html', download_btn=btn)
+</code></pre>
+
+<p>Run the app with:</p>
+<pre><code>$ python app.py
+</code></pre>
+
+<p>And navigate to <a href="http://localhost:5000/">http://localhost:5000/</a>. Click the download button to download a text file with <code>'Hello, World!'</code>.</p>
+<h2 id="citation">Citation</h2>
+<pre><code>@software{bowen2020flask-download-btn,
+  author = {Dillon Bowen},
+  title = {Flask-Download-Btn},
+  url = {https://dsbowen.github.io/flask-download-btn/},
+  date = {2020-06-17},
+}
+</code></pre>
+
+<h2 id="license">License</h2>
+<p>Users must cite Docstring-Markdown in any publications which use this software.</p>
+<p>Docstring-Markdown is licensed with the MIT <a href="https://github.com/dsbowen/flask-download-btn/blob/master/LICENSE">License</a>.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="setup/" class="btn btn-neutral float-right" title="Setup">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/dsbowen/flask-download-btn/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+      
+        <span style="margin-left: 15px"><a href="setup/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '.';</script>
+    <script src="js/theme.js" defer></script>
+      <script src="search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.1.1
+Build Date UTC : 2020-06-17 17:25:12.400412+00:00
+-->

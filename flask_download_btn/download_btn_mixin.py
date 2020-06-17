@@ -1,114 +1,127 @@
-"""Download button mixin
-
-This file defines a download button Mixin, as well as helper `Function` models
-for handling forms and creating files.
-
-The download button is responsible for:
-1. Rendering a download button, progress bar, and script
-2. Download process:
-    2.1 Web form handling
-    2.2 File creation
-"""
+"""# Download button mixin"""
 
 from flask import Markup, current_app, render_template, session
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, inspect
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.orderinglist import ordering_list
-from sqlalchemy.orm import relationship
-from sqlalchemy_function import FunctionMixin as FunctionMixinBase, FunctionRelator
+from sqlalchemy_function import FunctionRelator
 from sqlalchemy_modelid import ModelIdBase
-from sqlalchemy_mutable import MutableListType, MutableDictType
+from sqlalchemy_mutable import MutableListType
 from sqlalchemy_mutablesoup import MutableSoupType
 
-from copy import copy
 from datetime import datetime
 from random import choice
-import itertools
 import json
-import os
+
 import string
 
 
 class DownloadBtnMixin(FunctionRelator, ModelIdBase):
-    """Download button mixin"""
+    """
+    Subclass the `DownloadnBtnMixin` to create download button models. 
+    Download buttons are responsible for:
 
-    """Columns and relationships"""
+    1. Rendering a download button, progress bar, and download script.
+    2. Web form handling (optional).
+    3. File creation (optional).
+
+    Parameters
+    ----------
+    btn_template : str or None, default=None
+        Name of the download button html template. If `None`, the download 
+        button manager's `btn_template` is used.
+
+    progress_template : str or None, default=None
+        Name of the progress bar html template. If `None`, the download button 
+        manager's `progress_template` is used.
+
+    \*\*kwargs :
+        You can set the download button's attribtues by passing them as 
+        keyword arguments.
+
+    Attributes
+    ----------
+    btn : sqlalchemy_mutablesoup.MutableSoup
+        Download button html soup.
+
+    btn_tag : bs4.Tag
+        Download button tag.
+
+    btn_text : str, default='Download'
+        Text of the download button.
+
+    cache : str, default='no-store'
+        Cache response directive. See <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control>.
+
+    callback : str or None, default=None
+        Name of the callback view function. If this is not `None`, the client 
+        is redirected to the callback URL after download has completed.
+
+    downloads : list, default=[]
+        List of downloads. Items of this list may be URLs (str) or 
+        (URL, file_name) tuples (str, str).
+
+    download_msg : str, default=''
+        Message which will be briefly displayed after the download has 
+        completed.
+
+    downloaded : bool, default=False
+        Indicates that the file(s) associated with this button has been 
+        downloaded.
+
+    form_id : str or None, default=None
+        ID of the form processed by the download button. If you are not 
+        processing a form, or there is only one form on the page, leave this 
+        as `None`. If there are multiple forms on the page, set `form_id` to 
+        the ID of the form associated with the download button.
+
+    progress : sqlalchemy_mutbalesoup.MutableSoup
+        Progress bar html soup.
+
+    progress_bar : bs4.Tag
+        Progress bar tag.
+
+    progress_text : bs4.Tag
+        Progress bar text tag.
+
+    Function attributes
+    -------------------
+    handle_form_functions : list, default=[]
+        `HandleForm` functions are executed sequentially after the download 
+        button is clicked. These functions process the response from any form 
+        which may be associated with the download button.
+
+    create_file_functions : list, default=[]
+        `CreateFile` functions are executed sequentially after the `HandleForm` functions.
+    """
     btn = Column(MutableSoupType)
     progress = Column(MutableSoupType)
     cache = Column(String, default='no-store')
-    form_id = Column(String)
+    callback = Column(String)
     downloads = Column(MutableListType)
-    download_msg = Column(Text)
+    download_msg = Column(Text, default='')
     downloaded = Column(Boolean, default=False)
-    callback = Column(Text)
+    form_id = Column(String)
 
-    @declared_attr
-    def handle_form_functions(self):
-        return relationship(
-            'HandleForm',
-            backref='btn',
-            order_by='HandleForm.index',
-            collection_class=ordering_list('index')
-        )
-    
-    @declared_attr
-    def create_file_functions(self):
-        return relationship(
-            'CreateFile',
-            backref='btn',
-            order_by='CreateFile.index',
-            collection_class=ordering_list('index')
-        )
-
-    """Identities"""
-    @property
-    def _id(self):
-        ids = inspect(self).identity
-        return '-'.join([str(id) for id in ids]) if ids else None
-
-    @property
-    def script_id(self):
-        """HTML id for button script"""
-        return self.model_id+'-script'
-
-    @property
-    def btn_id(self):
-        """HTML id for the button <div> tag"""
-        return self.model_id+'-btn'
-
-    @property
-    def progress_id(self):
-        """HTML id for the progress bar container""" 
-        return self.model_id+'-progress'
-
-    @property
-    def progress_bar_id(self):
-        """HTML id for the progress bar"""
-        return self.model_id+'-progress-bar'
-    
-    @property
-    def progress_txt_id(self):
-        """HTML id for the progress bar text"""
-        return self.model_id+'-progress-txt'
-
-    @property
-    def a_id(self):
-        """HTML id for the <a> download tag"""
-        return self.model_id+'-a'
-
-    """HTML properties"""
     @property
     def btn_tag(self):
-        return self.btn.select_one('#'+self.btn_id)
-    
-    @property
-    def progress_bar_tag(self):
-        return self.progress.select_one('#'+self.progress_bar_id)
+        return self.btn.select_one('#'+self.get_id('btn'))
 
     @property
-    def _csrf_key(self):
-        """Key for the CSRF token"""
-        return self.model_id+'csrf'
+    def btn_text(self):
+        return self.btn_tag.text
+
+    @btn_text.setter
+    def btn_text(self, val):
+        self.btn.set_element('button', val)
+
+    @property
+    def progress_bar(self):
+        return self.progress.select_one('#'+self.get_id('progress-bar'))
+
+    @property
+    def progress_text(self):
+        return self.progress_bar.select_one(
+            '#'+self.get_id('progress-txt')
+        )
 
     @property
     def _form(self):
@@ -140,55 +153,86 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
             clean_downloads.append({'url': url, 'filename': filename})
         return clean_downloads
 
-    def __init__(self, *args, **kwargs):
-        """Constructor"""
+    def __init__(self, btn_template=None, progress_template=None, **kwargs):
         manager = current_app.extensions['download_btn_manager']
         manager.db.session.add(self)
         manager.db.session.flush([self])
         self.btn = render_template(
-            'download_btn/button.html', btn=self
+            btn_template or manager.btn_template, btn=self
         )
         self.progress = render_template(
-            'download_btn/progress.html', btn=self
+            progress_template or manager.progress_template, btn=self
         )
         self.downloads = []
-        super().__init__(*args, **kwargs)
+        self.handle_form_functions, self.create_file_functions = [], []
+        [setattr(self, key, val) for key, val in kwargs.items()]
+        super().__init__()
 
-    """Modify button text"""
-    @property
-    def btn_text(self):
-        return self.btn_tag.text
+    def get_id(self, sfx):
+        """
+        Get the CSS id associated with download button attributes.
 
-    @btn_text.setter
-    def btn_text(self, val):
-        self.btn.set_element('button', val)
+        Parameters
+        ----------
+        sfx : str
+            Suffix of the CSS id.
 
-    """Render download button, progress bar, and script"""
-    def render_btn(self):
-        """Render the download button"""
-        return self.btn.render()
+        Suffix values
+        -------------
+        btn : download button tag
 
+        csrf : key for CSRF token lookup in session
+
+        progress : progress bar `<div>` container
+
+        progress-bar : progress bar tag
+
+        progress-txt : progress bar text
+
+        Returns
+        -------
+        id : str
+            Of the form 'self.model_id-sfx'.
+        """
+        return self.model_id + '-' + sfx
+
+    # 1. Render a download button, progress bar, and download button script
     def render_progress(self):
-        """Render the progress bar
-        
-        The progress bar is rendered inside a container. The contents of the 
-        container may be updated with progress reports during file creation.
+        """
+        Render the progress bar inside a container which sets the 
+        progress bar display style to none. The contents of the container 
+        may be updated with progress reports during file creation.
+
+        Returns
+        -------
+        progress : flask.Markup
+            Rendered progress bar wrapped in a display none container. 
+            Insert this into a `<body>` tag in a Jinja template.
         """
         container = '<div id="{0}" style="display: none;">{1}</div>'
-        return Markup(container.format(self.progress_id, str(self.progress)))
+        return Markup(container.format(
+            self.get_id('progress'), str(self.progress)
+        ))
 
     def script(self):
-        """Render the download button script
+        """
+        Render the download button script.
         
         The script will call routes for form handling, file creation, and 
         download. Authentication for these routes requires a CSRF token. 
         This method creates a unique token and stores it in the session.
+
+        Returns
+        -------
+        script : flask.Markup
+            Rendered download button javascript. Insert this into a 
+            `<head>` tag in a Jinja template.
         """
         chars = string.ascii_letters + string.digits
         csrf_token = ''.join([choice(chars) for i in range(90)])
-        session[self._csrf_key] = csrf_token
+        session[self.get_id('csrf')] = csrf_token
         btn_kwargs = {
-            'id': self._id,
+            'id': inspect(self).identity[0],
             'btn_cls': type(self).__name__,
             'csrf_token': csrf_token
         }
@@ -197,56 +241,97 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
         ))
 
     def clear_csrf(self):
-        """Clear CSRF token from session"""
-        session.pop(self._csrf_key, None)
+        """
+        Clear CSRF token from session. Call this method to revoke client permission to download the file.
+        
+        Returns
+        -------
+        CSRF token : str or None
+        """
+        return session.pop(self.get_id('csrf'), None)
     
-    def reset(self, stage=None, pct_complete=None):
-        """Reset the progress bar
+    def reset(self, stage='', pct_complete=None):
+        """
+        Resets the progress bar by replacing its html. You will typically 
+        want to reset the progress bar at the start of a new stage.
 
-        This method resets the progress bar by replacing its HTML. You will 
-        typically want to reset the progress bar at the start of a new stage.
+        Parameters
+        ----------
+        stage : str, default=''
+            Stage of file creation. e.g. 'Compiling file 0'.
+
+        pct_complete : float or None, default=None
+            Percent of the stage complete. If `None`, the progress bar 
+            will display the `stage` without a percent complete message.
+
+        Returns
+        -------
+        reset event : str
+            Server sent event to reset the progress bar.
         """
         text = self._get_progress_text(stage, pct_complete)
-        self.progress.select_one('#'+self.progress_txt_id).string = text
+        self.progress_text.string = text
         pct_complete = str((pct_complete or 0)) + '%'
-        self.progress.select_one('#'+self.progress_bar_id)['width'] = pct_complete
+        self.progress_bar['width'] = pct_complete
         data = json.dumps({'html': str(self.progress)})
         return 'event: reset\ndata: {}\n\n'.format(data)
 
-    def report(self, stage=None, pct_complete=None):
-        """Send a progress report
-        
-        This method reports file creation progress with a server sent event. 
-        The download button script will update the progress bar accordingly.
+    def report(self, stage='', pct_complete=None):
+        """
+        Reports file creation progress by updating the progress bar html.
+
+        Parameters
+        ----------
+        stage : str, default=''
+            Stage of file creation. e.g. 'Compiling file 0'.
+
+        pct_complete : float or None, default=None
+            Percent of the stage complete. If `None`, the progress bar 
+            will display the `stage` without a percent complete message.
+
+        Returns
+        -------
+        report event : str
+            Server sent event to update the progress bar.
         """
         text = self._get_progress_text(stage, pct_complete)
         data = json.dumps({'text': text, 'pct_complete': pct_complete})
         return 'event: progress_report\ndata: {}\n\n'.format(data)
 
-    def _get_progress_text(self, stage=None, pct_complete=None):
-        """Get progress bar text"""
-        if pct_complete is None:
-            pct_complete, pct_complete_txt = 0, ''
-            stage = stage or ''
-        else:
-            pct_complete_txt = '{:.0f}%'.format(pct_complete)
-            stage = stage+': ' if stage is not None else ''
-        return stage + pct_complete_txt
+    def _get_progress_text(self, stage='', pct_complete=None):
+        """
+        Get progress bar text.
+        
+        Format is 'stage: pct_complete_txt'.
+        """
+        pct_complete_txt = (
+            '' if pct_complete is None else '{:.0f}%'.format(pct_complete)
+        )
+        return (stage+': ' if stage else '') + pct_complete_txt
     
     def transition_speed(self, speed):
+        """
+        Set the transition speed for the progress bar.
+
+        Parameters
+        ----------
+        speed : str
+            Number of seconds for the transiton, e.g. '.5s'
+
+        Returns
+        -------
+        transition speed event : str
+            Server sent event to update the transition speed.
+        """
         data = json.dumps({'speed': speed})
         return 'event: transition_speed\ndata: {}\n\n'.format(data)
 
-    """2. Download process"""
-    """2.1 Web form handling"""
+    # 2. Web form handling
     def _handle_form(self, response):
         """Execute handle form functions with form response."""
-        [
-            f.func(f.parent, response, *f.args, **f.kwargs) 
-            for f in self.handle_form_functions
-        ]
+        [func(response, self) for func in self.handle_form_functions]
     
-    """2.2 File creation"""
+    # 3. File creation
     def _create_files(self, app):
         """Create files for download
 
@@ -256,14 +341,13 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
         Progress reports are yielded as server sent events.
         """
         with app.app_context():
-            db = app.extensions['download_btn_manager'].db
-            db.session.add(self)
+            app.extensions['download_btn_manager'].db.session.add(self)
             sse_prev = sse_curr = datetime.now()
-            for f in self.create_file_functions:
-                for exp in f():
+            for func in self.create_file_functions:
+                for exp in func(self):
                     yield exp
                     sse_prev, sse_curr = sse_curr, datetime.now()
-                    yield self._update_transition_speed(sse_prev, sse_curr)
+                    yield self._update_transition_speed(sse_prev,sse_curr)
             download_ready_event = self._download_ready()
         yield download_ready_event
 
@@ -281,7 +365,7 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
 
     def _download_ready(self):
         """Send a download ready message"""
-        pct_complete = None if self.download_msg is None else 100
+        pct_complete = None if not self.download_msg else 100
         text = self._get_progress_text(self.download_msg, pct_complete)
         data = json.dumps({
             'text': text,
@@ -291,21 +375,3 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
             'callback': self.callback,
         })
         return 'event: download_ready\ndata: {}\n\n'.format(data)
-
-
-class FunctionMixin(FunctionMixinBase):
-    @property
-    def parent(self):
-        return self.btn
-
-    @parent.setter
-    def parent(self, value):
-        self.btn = value
-
-
-class HandleFormMixin(FunctionMixin):
-    pass
-
-
-class CreateFileMixin(FunctionMixin):
-    pass

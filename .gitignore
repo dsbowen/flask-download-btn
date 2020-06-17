@@ -1,4 +1,6 @@
-__pycache__
+__pycache__/
 *.egg-info/
 *tmp/
+.ipynb_checkpoints/
+build/
 dist/

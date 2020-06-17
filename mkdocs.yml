@@ -1,0 +1,20 @@
+site_name: Flask-Download-Button
+docs_dir: docs_md
+site_dir: docs
+repo_url: https://github.com/dsbowen/flask-download-btn/
+edit_uri: edit/master/docs_md
+nav:
+  - Home: index.md
+  - Tutorial:
+    - Setup: setup.md
+    - Basic use: basic.md
+    - Form handling: form.md
+    - File creation: create.md
+    - Style: style.md
+  - API:
+    - Manager: manager.md
+    - Download mixin: download_btn_mixin.md
+  - Contribute: contribute.md
+theme: readthedocs
+extra_css:
+  - css/extra.css

@@ -1,4 +1,4 @@
-<script id="{{ btn.script_id }}">
+<script id="{{ btn.get_id('script') }}">
     /* Download button script
 
     The download process has three stages:
@@ -7,7 +7,7 @@
     3. Download
     */
     $(document).ready(function(){
-        $("#{{ btn.btn_id }}").click(function(){
+        $("#{{ btn.get_id('btn') }}").click(function(){
             console.log('Download started');
             $(this).prop('disabled', true);
             handle_form();
@@ -46,8 +46,8 @@
 
     function event_args(e){
         // Get event arguments
-        var progress = $("#{{ btn.progress_id }}");
-        var progress_bar = $("#{{ btn.progress_bar_id }}");
+        var progress = $("#{{ btn.get_id('progress') }}");
+        var progress_bar = $("#{{ btn.get_id('progress-bar') }}");
         var data = $.parseJSON(e.data);
         return {
             'progress': progress, 'progress_bar': progress_bar, 'data': data
@@ -67,7 +67,7 @@
 
     function report_progress(e){
         // Update the progress bar with a progress report
-        $("#{{ btn.progress_txt_id }}").text(e.data.text);
+        $("#{{ btn.get_id('progress-txt') }}").text(e.data.text);
         show_bar(e.progress);
         e.progress_bar.width(e.data.pct_complete+"%");
     }
@@ -122,7 +122,7 @@
             window.location.replace(e.data.callback);
         }
         else {
-            $("#{{ btn.btn_id }}").prop('disabled', false);
+            $("#{{ btn.get_id('btn') }}").prop('disabled', false);
         }
         console.log('Download complete');
     }
