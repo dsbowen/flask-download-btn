@@ -105,6 +105,6 @@ And navigate to <http://localhost:5000/>. Click the download button to download 
 
 ## License
 
-Users must cite Docstring-Markdown in any publications which use this software.
+Users must cite this package in any publications which use it.
 
-Docstring-Markdown is licensed with the MIT [License](https://github.com/dsbowen/flask-download-btn/blob/master/LICENSE).
+It is licensed with the MIT [License](https://github.com/dsbowen/flask-download-btn/blob/master/LICENSE).
