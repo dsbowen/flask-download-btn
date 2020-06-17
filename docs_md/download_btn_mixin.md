@@ -34,7 +34,7 @@
 ##flask_download_btn.**DownloadBtnMixin**
 
 <p class="func-header">
-    <i>class</i> flask_download_btn.<b>DownloadBtnMixin</b>(<i>btn_template=None, progress_template=None, **kwargs</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L20">[source]</a>
+    <i>class</i> flask_download_btn.<b>DownloadBtnMixin</b>(<i>btn_template=None, progress_template=None, **kwargs</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L17">[source]</a>
 </p>
 
 Subclass the `DownloadnBtnMixin` to create download button models.
@@ -135,7 +135,7 @@ Download buttons are responsible for:
 
 
 <p class="func-header">
-    <i></i> <b>get_id</b>(<i>self, sfx</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L192">[source]</a>
+    <i></i> <b>get_id</b>(<i>self, sfx</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L171">[source]</a>
 </p>
 
 Get the CSS id associated with download button attributes.
@@ -189,7 +189,7 @@ Get the CSS id associated with download button attributes.
 
 
 <p class="func-header">
-    <i></i> <b>render_progress</b>(<i>self</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L221">[source]</a>
+    <i></i> <b>render_progress</b>(<i>self</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L200">[source]</a>
 </p>
 
 Render the progress bar inside a container which sets the
@@ -215,7 +215,7 @@ may be updated with progress reports during file creation.
 
 
 <p class="func-header">
-    <i></i> <b>script</b>(<i>self</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L238">[source]</a>
+    <i></i> <b>script</b>(<i>self</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L217">[source]</a>
 </p>
 
 Render the download button script.
@@ -243,7 +243,7 @@ This method creates a unique token and stores it in the session.
 
 
 <p class="func-header">
-    <i></i> <b>clear_csrf</b>(<i>self</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L264">[source]</a>
+    <i></i> <b>clear_csrf</b>(<i>self</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L243">[source]</a>
 </p>
 
 Clear CSRF token from session. Call this method to revoke client permission to download the file.
@@ -267,7 +267,7 @@ Clear CSRF token from session. Call this method to revoke client permission to d
 
 
 <p class="func-header">
-    <i></i> <b>reset</b>(<i>self, stage='', pct_complete=None</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L274">[source]</a>
+    <i></i> <b>reset</b>(<i>self, stage='', pct_complete=None</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L253">[source]</a>
 </p>
 
 Resets the progress bar by replacing its html. You will typically
@@ -303,7 +303,7 @@ want to reset the progress bar at the start of a new stage.
 
 
 <p class="func-header">
-    <i></i> <b>report</b>(<i>self, stage='', pct_complete=None</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L300">[source]</a>
+    <i></i> <b>report</b>(<i>self, stage='', pct_complete=None</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L279">[source]</a>
 </p>
 
 Reports file creation progress by updating the progress bar html.
@@ -338,7 +338,7 @@ Reports file creation progress by updating the progress bar html.
 
 
 <p class="func-header">
-    <i></i> <b>transition_speed</b>(<i>self, speed</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/download_btn_mixin.py#L333">[source]</a>
+    <i></i> <b>transition_speed</b>(<i>self, speed</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/download_btn_mixin.py#L312">[source]</a>
 </p>
 
 Set the transition speed for the progress bar.

@@ -34,7 +34,7 @@
 ##flask_download_btn.**DownloadBtnManager**
 
 <p class="func-header">
-    <i>class</i> flask_download_btn.<b>DownloadBtnManager</b>(<i>app=None, **kwargs</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/__init__.py#L15">[source]</a>
+    <i>class</i> flask_download_btn.<b>DownloadBtnManager</b>(<i>app=None, **kwargs</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/__init__.py#L14">[source]</a>
 </p>
 
 The manager has two responsibilities:
@@ -99,7 +99,7 @@ download_btn_manager = DownloadBtnManager(app, db)
 
 
 <p class="func-header">
-    <i></i> <b>register</b>(<i>cls, btn_cls</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/__init__.py#L66">[source]</a>
+    <i></i> <b>register</b>(<i>cls, btn_cls</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/__init__.py#L65">[source]</a>
 </p>
 
 Decorator for updating the download button class registry.
@@ -138,7 +138,7 @@ class DownloadBtn(DownloadBtnMixin, db.Model):
 
 
 <p class="func-header">
-    <i></i> <b>init_app</b>(<i>self, app, **kwargs</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/flask_download_btn/__init__.py#L100">[source]</a>
+    <i></i> <b>init_app</b>(<i>self, app, **kwargs</i>) <a class="src-href" target="_blank" href="https://github.com/dsbowen/flask-download-btn/blob/master/flask_download_btn/__init__.py#L99">[source]</a>
 </p>
 
 Initialize the download button manager with the application.
