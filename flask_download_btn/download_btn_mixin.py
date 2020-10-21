@@ -2,7 +2,6 @@
 
 from flask import Markup, current_app, render_template, session
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, inspect
-from sqlalchemy_function import FunctionRelator
 from sqlalchemy_modelid import ModelIdBase
 from sqlalchemy_mutable import MutableListType
 from sqlalchemy_mutablesoup import MutableSoupType
@@ -14,7 +13,7 @@ import json
 import string
 
 
-class DownloadBtnMixin(FunctionRelator, ModelIdBase):
+class DownloadBtnMixin(ModelIdBase):
     """
     Subclass the `DownloadnBtnMixin` to create download button models. 
     Download buttons are responsible for:
@@ -96,10 +95,12 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
     progress = Column(MutableSoupType)
     cache = Column(String, default='no-store')
     callback = Column(String)
-    downloads = Column(MutableListType)
+    create_file_functions = Column(MutableListType, default=[])
+    downloads = Column(MutableListType, default=[])
     download_msg = Column(Text, default='')
     downloaded = Column(Boolean, default=False)
     form_id = Column(String)
+    handle_form_functions = Column(MutableListType, default=[])
 
     @property
     def btn_tag(self):
@@ -136,11 +137,18 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
         `tmp_downloads` attributes. `tmp_downloads` is cleared on database 
         commit, and should be used for serving temporary files through data 
         urls.
+
+        Note: tmp_downloads is not a column because it may be very large.
         """
+        def get_tmp_downloads():
+            if not hasattr(self, 'tmp_downloads') or not self.tmp_downloads:
+                return []
+            if isinstance(self.tmp_downloads, list):
+                return self.tmp_downloads
+            return [self.tmp_downloads]
+
         clean_downloads = []
-        tmp_downloads = []
-        if hasattr(self, 'tmp_downloads') and self.tmp_downloads:
-            tmp_downloads = self.tmp_downloads
+        tmp_downloads = get_tmp_downloads()
         for download in self.downloads + tmp_downloads:
             if isinstance(download, tuple):
                 url, filename = download
@@ -163,8 +171,7 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
         self.progress = render_template(
             progress_template or manager.progress_template, btn=self
         )
-        self.downloads = []
-        self.handle_form_functions, self.create_file_functions = [], []
+        self.tmp_downloads = []
         [setattr(self, key, val) for key, val in kwargs.items()]
         super().__init__()
 
@@ -188,6 +195,8 @@ class DownloadBtnMixin(FunctionRelator, ModelIdBase):
         progress-bar : progress bar tag
 
         progress-txt : progress bar text
+
+        script : javascript
 
         Returns
         -------
