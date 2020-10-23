@@ -2,15 +2,15 @@
     <head>
         <!-- include Bootstrap CSS and Javascript -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    </head>
+    <body>
+        <!-- render the download button and progress bar -->
+        {{ download_btn.render_btn() | safe }}
+        {{ download_btn.render_progress() | safe }}
         <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
         <!-- include download button script -->
-        {{ download_btn.script() }}
-    </head>
-    <body>
-        <!-- render the download button and progress bar -->
-        {{ download_btn.btn.render() }}
-        {{ download_btn.render_progress() }}
+        {{ download_btn.render_script() | safe }}
     </body>
 </html>

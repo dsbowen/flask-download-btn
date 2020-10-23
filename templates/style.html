@@ -1,16 +1,12 @@
 <html>
     <head>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-        {{ download_btn.script() }}
     </head>
     <body>
     <div class="container h-100">
     <div class="row h-100 justify-content-center align-items-center">
         <form>
-            {{ download_btn.render_progress() }}
+            {{ download_btn.render_progress() | safe }}
             <div id="selectFiles" name="selectFiles">
                 <p>Select files to download.</p>
                 <div class="custom-control custom-checkbox">
@@ -23,9 +19,13 @@
                 </div>
             </div>
             <br>
-            {{ download_btn.btn.render() }}
+            {{ download_btn.render_btn() | safe }}
         </form>
     </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    {{ download_btn.render_script() |safe }}
     </body>
 </html>

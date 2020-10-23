@@ -34,6 +34,8 @@ HELLO_MOON_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_moon.
 def index():
     btn = DownloadBtn()
     btn.downloads = (HELLO_WORLD_URL, 'hello_world.txt')
+    print(btn.btn_attrs)
+    db.session.add(btn)
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 
@@ -45,6 +47,7 @@ def multi_file():
         (HELLO_WORLD_URL, 'hello_world.txt'), 
         (HELLO_MOON_URL, 'hello_moon.txt')
     ]
+    db.session.add(btn)
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 
@@ -56,6 +59,7 @@ def callback():
     btn = DownloadBtn()
     btn.downloads = (HELLO_WORLD_URL, 'hello_world.txt')
     btn.callback = url_for('download_success')
+    db.session.add(btn)
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 
@@ -68,6 +72,7 @@ def download_success():
 def form_handling():
     btn = DownloadBtn()
     btn.handle_form_functions = select_files
+    db.session.add(btn)
     db.session.commit()
     return render_template('form-handling.html', download_btn=btn)
 
@@ -91,6 +96,7 @@ def file_creation():
         partial(create_file0, msg='Hello, World!'), 
         partial(create_file1, msg=choices(string.ascii_letters, k=400))
     ]
+    db.session.add(btn)
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 
@@ -131,13 +137,14 @@ def create_file1(btn, msg):
 def style():
     btn = DownloadBtn()
     btn.btn_text = 'Custom Button Text'
-    btn.btn_tag['class'].remove('btn-primary')
-    btn.btn_tag['class'].append('btn-outline-primary')
-    btn.progress_bar['class'] += [
+    btn.btn_attrs['class'].remove('btn-primary')
+    btn.btn_attrs['class'].append('btn-outline-primary')
+    btn.progress_bar_attrs['class'] += [
         'progress-bar-striped', 'progress-bar-animated'
     ]
     btn.handle_form_functions = select_tmp_files
     btn.download_msg = 'Download Complete'
+    db.session.add(btn)
     db.session.commit()
     return render_template('style.html', download_btn=btn)
 

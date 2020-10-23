@@ -1,6 +1,7 @@
-<div class="progress position-relative" style="height:25px; background-color:rgb(200,200,200); margin-top:10px; margin-bottom:10px; box-shadow:0 1px 2px rbga(0,0,0,0.25) inset;">
-    <div id="{{ btn.get_id('progress-bar') }}" class="progress-bar" role="progress-bar" width="{{ pct_complete }}%" style="transition: width .5s;">
-        <div id="{{ btn.get_id('progress-txt') }}" class="justify-content-center d-flex position-absolute w-100 align-items-center">
+<div {{ btn.progress_attrs.to_html() | safe }}>
+    <div id="{{ btn.get_id('progress-bar') }}" {{ btn.progress_bar_attrs.to_html() | safe}}>
+        <div id="{{ btn.get_id('progress-txt') }}" {{ btn.progress_text_attrs.to_html() | safe }}>
+            {{ btn.progress_text }}
         </div>
     </div>
 </div>
