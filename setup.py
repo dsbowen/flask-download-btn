@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.22",
     author="Dillon Bowen",
     author_email="dsbowen@wharton.upenn.edu",
-    description="Flask-Download-Btn defines a SQLALchemy Mixin for creating Bootstrap download buttons in a Flask application.",
+    description="Defines a SQLALchemy Mixin for creating Bootstrap download buttons in a Flask application.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://dsbowen.github.io/flask-download-btn/",
@@ -19,8 +19,7 @@ setuptools.setup(
         'flask-sqlalchemy>=2.4.1',
         'sqlalchemy>=1.3.12',
         'sqlalchemy_modelid>=0.0.3',
-        'sqlalchemy_mutable>=0.0.8',
-        'sqlalchemy_mutablesoup>=0.0.9',
+        'sqlalchemy_mutable>=0.0.10',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

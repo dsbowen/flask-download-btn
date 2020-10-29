@@ -180,7 +180,8 @@ class DownloadBtnMixin(ModelIdBase):
             create_file_functions=[],
             downloads=[],
             download_msg='',
-            form_id=None
+            form_id=None,
+            **kwargs
         ):
         manager = current_app.extensions['download_btn_manager']
         self.btn_template = btn_template or manager.btn_template
@@ -200,7 +201,7 @@ class DownloadBtnMixin(ModelIdBase):
         self.tmp_downloads = []
         self.download_msg = download_msg
         self.form_id = form_id
-        super().__init__()
+        super().__init__(**kwargs)
 
     def get_id(self, sfx):
         """
