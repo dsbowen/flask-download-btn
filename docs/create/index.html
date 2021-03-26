@@ -128,7 +128,7 @@
 <p>In this example, we create two temporary download files and report download progress to the client using a progress bar.</p>
 <h2 id="relationship">Relationship</h2>
 <p>We add a <code>create_file_functions</code> relationship from <code>DownloadBtn</code> to <code>Function</code>.</p>
-<pre><code class="python">@DownloadBtnManager.register
+<pre><code class="language-python">@DownloadBtnManager.register
 class DownloadBtn(DownloadBtnMixin, db.Model):
     ...
     create_file_functions = db.relationship(
@@ -144,10 +144,9 @@ class Function(FunctionMixin, db.Model):
     ...
     create_file_id = db.Column(db.Integer, db.ForeignKey('download_btn.id'))
 </code></pre>
-
 <h2 id="view-function">View function</h2>
 <p>We add the following view function to <code>app.py</code>.</p>
-<pre><code class="python">import string
+<pre><code class="language-python">import string
 from random import choices
 
 @app.route('/file-creation')
@@ -161,11 +160,10 @@ def file_creation():
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 </code></pre>
-
 <h2 id="create-file-functions">Create file functions</h2>
 <p>Create file functions always take the download button to which they are related as their first argument. We can pass in additional arguments and keyword arguments by setting the Function's <code>args</code> and <code>kwargs</code> attributes.</p>
 <p>In our 0th file creation function, we store <code>Hello, World!</code> in a data URL. We cache the result by exiting the function early if the download button has already been clicked.</p>
-<pre><code class="python">import time
+<pre><code class="language-python">import time
 from base64 import b64encode
 
 def create_file0(btn, msg):
@@ -184,9 +182,8 @@ def create_file0(btn, msg):
     db.session.commit()
     yield btn.report(stage, 100.0)
 </code></pre>
-
 <p>In our 1st file creation function, we store a random string of ascii letters in a data URL. Because we want to store a different random string each time the download button is clicked, we store the URL in the download button's <code>tmp_downloads</code> attribute.</p>
-<pre><code class="python">def create_file1(btn, msg):
+<pre><code class="language-python">def create_file1(btn, msg):
     stage = 'Creating File 1'
     yield btn.reset(stage, 0)
     data = ''

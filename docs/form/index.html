@@ -132,9 +132,8 @@
     index.html
 app.py
 </code></pre>
-
 <p>In <code>form-handling.html</code>:</p>
-<pre><code class="html">&lt;html&gt;
+<pre><code class="language-html">&lt;html&gt;
     &lt;head&gt;
         &lt;link rel=&quot;stylesheet&quot; href=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css&quot;&gt;
         &lt;script src=&quot;https://code.jquery.com/jquery-3.4.1.min.js&quot;&gt;&lt;/script&gt;
@@ -161,10 +160,9 @@ app.py
     &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-
 <h2 id="function-model">Function model</h2>
 <p>Forms are handled by <a href="https://dsbowen.github.io/sqlalchemy-function">Function models</a>. To begin, we define a <code>Function</code> model and give <code>DownloadBtn</code> a relationship to it named <code>handle_form_functions</code>.</p>
-<pre><code class="python">@DownloadBtnManager.register
+<pre><code class="language-python">@DownloadBtnManager.register
 class DownloadBtn(DownloadBtnMixin, db.Model):
     ...
     handle_form_functions = db.relationship(
@@ -181,11 +179,10 @@ class Function(FunctionMixin, db.Model):
     index = db.Column(db.Integer)
     handle_form_id = db.Column(db.Integer, db.ForeignKey('download_btn.id'))
 </code></pre>
-
 <h2 id="view-function">View function</h2>
 <p>Form handling Functions always take the client's form response as their first argument, and the Download Button to which they are related as their second argument. The response is a <code>werkzeug.datastructures.ImmutableMultiDict</code> object.</p>
 <p>We can pass in additional arguments and keyword arguments by setting the Function's <code>args</code> and <code>kwargs</code> attributes.</p>
-<pre><code class="python">@app.route('/form-handling')
+<pre><code class="language-python">@app.route('/form-handling')
 def form_handling():
     btn = DownloadBtn()
     btn.handle_form_functions = select_files

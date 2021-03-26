@@ -119,7 +119,7 @@
               
                 <h1 id="setup">Setup</h1>
 <p>We begin by setting up a Flask app with a Flask-SQLAlchemy database. To use Flask-Download-Btn, we create a <code>DownloadBtnManager</code> and a <code>DownloadBtn</code> model. Write the following code in <code>app.py</code>.</p>
-<pre><code class="python">from flask_download_btn import DownloadBtnManager, DownloadBtnMixin
+<pre><code class="language-python">from flask_download_btn import DownloadBtnManager, DownloadBtnMixin
 
 from flask import Flask, render_template, session
 from flask_sqlalchemy import SQLAlchemy
@@ -153,19 +153,17 @@ def before_first_request():
 if __name__ == '__main__':
     app.run(debug=True)
 </code></pre>
-
 <p>Next, pick two download URLs, or use mine.</p>
-<pre><code class="python">HELLO_WORLD_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_world.txt'
+<pre><code class="language-python">HELLO_WORLD_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_world.txt'
 HELLO_MOON_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_moon.txt'
 </code></pre>
-
 <p>Now create a Jinja template in your <code>templates</code> folder. The template must:</p>
 <ol>
 <li>Include Bootstrap CSS and Javascript</li>
 <li>Include the download button script</li>
 <li>Render the download button and progress bar</li>
 </ol>
-<pre><code class="html">&lt;html&gt;
+<pre><code class="language-html">&lt;html&gt;
     &lt;head&gt;
         &lt;!-- include Bootstrap CSS and Javascript --&gt;
         &lt;link rel=&quot;stylesheet&quot; href=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css&quot;&gt;
@@ -182,7 +180,6 @@ HELLO_MOON_URL = 'https://test-bucket2357.s3.us-east-2.amazonaws.com/hello_moon.
     &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-
 <p>Our folder structure looks like:</p>
 <pre><code>templates/
     index.html

@@ -124,22 +124,20 @@
                 <h1 id="basic-use">Basic use</h1>
 <p>We start with a basic example in which we create a download button with a single download file. The download URL is <code>HELLO_WORLD_URL</code>, and the download file will be named <code>hello_world.txt</code>.</p>
 <p>Put this view function in <code>app.py</code></p>
-<pre><code class="python">@app.route('/')
+<pre><code class="language-python">@app.route('/')
 def index():
     btn = DownloadBtn()
     btn.downloads = [(HELLO_WORLD_URL, 'hello_world.txt')]
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 </code></pre>
-
 <p>Now we are ready to run our app. In your terminal window, enter:</p>
 <pre><code>$ python app.py
 </code></pre>
-
 <p>And navigate to <a href="http://localhost:5000/">http://localhost:5000/</a>. Click the download button to download <code>hello_world.txt</code>.</p>
 <h2 id="downloading-multiple-files">Downloading multiple files</h2>
 <p>We create a download button which downloads two files: <code>hello_world.txt</code> and <code>hello_moon.txt</code>.</p>
-<pre><code class="python">@app.route('/multi-file')
+<pre><code class="language-python">@app.route('/multi-file')
 def multi_file():
     btn = DownloadBtn()
     btn.downloads = [
@@ -149,10 +147,9 @@ def multi_file():
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 </code></pre>
-
 <h2 id="callback-routes">Callback routes</h2>
 <p>This download button will redirect the client to a 'Success' page after the download has finished.</p>
-<pre><code class="python">from flask import url_for
+<pre><code class="language-python">from flask import url_for
 
 @app.route('/callback')
 def callback():

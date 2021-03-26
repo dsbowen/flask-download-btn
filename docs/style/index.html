@@ -126,9 +126,8 @@
     style.html
 app.py
 </code></pre>
-
 <p>The template looks like:</p>
-<pre><code class="html">&lt;html&gt;
+<pre><code class="language-html">&lt;html&gt;
     &lt;head&gt;
         &lt;link rel=&quot;stylesheet&quot; href=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css&quot;&gt;
         &lt;script src=&quot;https://code.jquery.com/jquery-3.4.1.min.js&quot;&gt;&lt;/script&gt;
@@ -160,9 +159,8 @@ app.py
     &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-
 <p>In <code>app.py</code>:</p>
-<pre><code class="python">@app.route('/style')
+<pre><code class="language-python">@app.route('/style')
 def style():
     btn = DownloadBtn()
     btn.btn_text = 'Custom Button Text'

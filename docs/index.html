@@ -134,35 +134,32 @@
 <h2 id="installation">Installation</h2>
 <pre><code>$ pip install flask-download-btn
 </code></pre>
-
 <h2 id="quickstart">Quickstart</h2>
 <p>Our folder structure will look like:</p>
 <pre><code>templates/
     index.html
 app.py
 </code></pre>
-
 <p>In <code>templates/index.html</code>, paste the following Jinja template:</p>
-<pre><code class="html">&lt;html&gt;
+<pre><code class="language-html">&lt;html&gt;
     &lt;head&gt;
         &lt;!-- include Bootstrap CSS and Javascript --&gt;
         &lt;link rel=&quot;stylesheet&quot; href=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css&quot;&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;!-- render the download button and progress bar --&gt;
+        {{ download_btn.render_btn() | safe }}
+        {{ download_btn.render_progress() | safe }}
         &lt;script src=&quot;https://code.jquery.com/jquery-3.4.1.min.js&quot;&gt;&lt;/script&gt;
         &lt;script src=&quot;https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js&quot;&gt;&lt;/script&gt;
         &lt;script src=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js&quot;&gt;&lt;/script&gt;
         &lt;!-- include download button script --&gt;
-        {{ download_btn.script() }}
-    &lt;/head&gt;
-    &lt;body&gt;
-        &lt;!-- render the download button and progress bar --&gt;
-        {{ download_btn.btn.render() }}
-        {{ download_btn.render_progress() }}
+        {{ download_btn.render_script() | safe }}
     &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
-
 <p>In <code>app.py</code>:</p>
-<pre><code class="python">from flask_download_btn import DownloadBtnManager, DownloadBtnMixin
+<pre><code class="language-python">from flask_download_btn import DownloadBtnManager, DownloadBtnMixin
 
 from flask import Flask, render_template, session
 from flask_sqlalchemy import SQLAlchemy
@@ -197,11 +194,9 @@ def index():
     db.session.commit()
     return render_template('index.html', download_btn=btn)
 </code></pre>
-
 <p>Run the app with:</p>
 <pre><code>$ python app.py
 </code></pre>
-
 <p>And navigate to <a href="http://localhost:5000/">http://localhost:5000/</a>. Click the download button to download a text file with <code>'Hello, World!'</code>.</p>
 <h2 id="citation">Citation</h2>
 <pre><code>@software{bowen2020flask-download-btn,
@@ -211,7 +206,6 @@ def index():
   date = {2020-06-17},
 }
 </code></pre>
-
 <h2 id="license">License</h2>
 <p>Users must cite this package in any publications which use it.</p>
 <p>It is licensed with the MIT <a href="https://github.com/dsbowen/flask-download-btn/blob/master/LICENSE">License</a>.</p>
@@ -269,6 +263,6 @@ def index():
 </html>
 
 <!--
-MkDocs version : 1.1.1
-Build Date UTC : 2020-06-17 17:40:29.991657+00:00
+MkDocs version : 1.1.2
+Build Date UTC : 2021-03-26 17:42:33.295073+00:00
 -->
